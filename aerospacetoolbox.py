@@ -189,7 +189,7 @@ def flowisentropic(gamma, flow, mtype="mach"):
 
         return M, T, P, rho, area
 
-def atmosisa(h, mtype="", Toffset=0):
+def atmosisa(h, mtype="", Toffset=0, Poffset=0):
     """
     Evaluate the international standard atmosphere (ISA) at a given altitude.
     The function assumes a continued troposphere below 0 meters and an infinite
@@ -197,7 +197,7 @@ def atmosisa(h, mtype="", Toffset=0):
     a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
 
     call as:
-        [T, a, P, rho] = atmosisa(h, mtype, Toffset)
+        [T, a, P, rho] = atmosisa(h, mtype, Toffset, Poffset)
 
     Parameters
     ----------
@@ -228,7 +228,6 @@ def atmosisa(h, mtype="", Toffset=0):
         raise Exception("Height input must be real numbers.")
 
     #define constants
-    Pb = 101325.0
     R = 287.053
     g = 9.80665
     Re = 6356766.0
@@ -240,11 +239,13 @@ def atmosisa(h, mtype="", Toffset=0):
     #define the international standard atmosphere
     Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
     Lr = sp.array([-6.5, 0, 1, 2.8, 0, -2.8, -2.0], sp.float64) * 0.001
-    Tb = sp.array([15, -56.5, -56.5, -44.5, -2.5, -2.5, -58.5, -86.28])
-    Tb += 273.15 + Toffset
+
+    #define sea level conditions
+    Tb = 288.15 + Toffset
+    Pb = 101325.0 + Poffset
 
     #create solution arrays
-    T = sp.ones(h.shape, sp.float64) * Tb[0]
+    T = sp.ones(h.shape, sp.float64) * Tb
     P = sp.ones(h.shape, sp.float64) * Pb
 
     #loop through the layers of the international standard atmosphere
@@ -258,13 +259,19 @@ def atmosisa(h, mtype="", Toffset=0):
 
         #calculate the standard atmosphere from the hydrostatic equation
         if Lr[i] == 0:
-            T[s] = Tb[i]
-            P[s] = Pb * sp.exp((-g/(R*Tb[i]))*(h[s]-Hb[i]))
-            Pb *= sp.exp((-g/(R*Tb[i]))*(Hb[i+1]-Hb[i]))
+            T[s] = Tb
+            P[s] = Pb * sp.exp((-g/(R*Tb))*(h[s]-Hb[i]))
+
+            #update new layer base values
+            Pb *= sp.exp((-g/(R*Tb))*(Hb[i+1]-Hb[i]))
         else:
-            T[s] = Tb[i] + Lr[i]*(h[s]-Hb[i])
-            P[s] = Pb * (T[s] / Tb[i])**(-g/(Lr[i]*R))
-            Pb *= (Tb[i+1] / Tb[i])**(-g/(Lr[i]*R))
+            T[s] = Tb + Lr[i]*(h[s]-Hb[i])
+            P[s] = Pb * (T[s] / Tb)**(-g/(Lr[i]*R))
+
+            #update new layer base values
+            Tt = Tb + Lr[i] * (Hb[i+1]-Hb[i])
+            Pb *= (Tt / Tb)**(-g/(Lr[i]*R))
+            Tb = Tt
 
     #flatten solution if single value was given
     if h.size == 1:
