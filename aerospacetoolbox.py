@@ -2,14 +2,14 @@
 aerospacetoolbox.py
 
 Functions for aerospace analysis to develop and evaluate your designs.
-Currently only supports the following function: flowisentropic
+Currently supports the following functions: flowisentropic, atmosisa
 
 Created to look like the equivalent set of functions in the matlab
 aerospace toolbox: http://www.mathworks.nl/help/aerotbx/index.html
 
 Author: Wilco Schoneveld
-Date: 6 June 2013
-Version: 0.1
+Date: 7 June 2013
+Version: 0.2
 """
 
 import scipy as sp
@@ -188,3 +188,87 @@ def flowisentropic(gamma, flow, mtype="mach"):
         area[r] = a[r]**(-c[r]) * d[r]**c[r] / M[r]
 
         return M, T, P, rho, area
+
+def atmosisa(h, mtype="", Toffset=0):
+    """
+    Evaluate the international standard atmosphere (ISA) at a given altitude.
+    The function assumes a continued troposphere below 0 meters and an infinite
+    mesosphere above 71 kilometers geopotential height. atmosisa returns
+    a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
+
+    call as:
+        [T, a, P, rho] = atmosisa(h, mtype, Toffset)
+
+    Parameters
+    ----------
+
+        
+    Returns
+    -------
+
+        
+    Examples
+    --------
+    >>> atmosisa(-2000)
+    (301.15409141737081, 347.88799859305686, 127782.84080627175,
+        1.4781608008362668)
+
+    References
+    ----------
+    Definition of the Standard Atmosphere:
+        Anderson, John D. (2008). Introduction to Flight. (Sixth Edition
+        International). NY: McGraw-Hill.
+    """
+
+    #convert the input value to array with ndmin=1
+    h = sp.array(h, sp.float64, ndmin=1)
+
+    #check if given input is valud
+    if not sp.isreal(h).all():
+        raise Exception("Height input must be real numbers.")
+
+    #define constants
+    Pb = 101325.0
+    R = 287.053
+    g = 9.80665
+    Re = 6356766.0
+
+    #convert altitude to geopotential altitude if needed
+    if not mtype == "geop":
+        h *= Re / (Re + h)
+
+    #define the international standard atmosphere
+    Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
+    Lr = sp.array([-6.5, 0, 1, 2.8, 0, -2.8, -2.0], sp.float64) * 0.001
+    Tb = sp.array([15, -56.5, -56.5, -44.5, -2.5, -2.5, -58.5, -86.28])
+    Tb += 273.15 + Toffset
+
+    #create solution arrays
+    T = sp.ones(h.shape, sp.float64) * Tb[0]
+    P = sp.ones(h.shape, sp.float64) * Pb
+
+    #loop through the layers of the international standard atmosphere
+    for i in xrange(7):
+        #grab a selection with altitudes above current layer
+        if i == 0: s = h > -sp.inf
+        else: s = h > Hb[i]
+
+        #if no altitudes are selected, stop looping
+        if not s.any(): break
+
+        #calculate the standard atmosphere from the hydrostatic equation
+        if Lr[i] == 0:
+            T[s] = Tb[i]
+            P[s] = Pb * sp.exp((-g/(R*Tb[i]))*(h[s]-Hb[i]))
+            Pb *= sp.exp((-g/(R*Tb[i]))*(Hb[i+1]-Hb[i]))
+        else:
+            T[s] = Tb[i] + Lr[i]*(h[s]-Hb[i])
+            P[s] = Pb * (T[s] / Tb[i])**(-g/(Lr[i]*R))
+            Pb *= (Tb[i+1] / Tb[i])**(-g/(Lr[i]*R))
+
+    #flatten solution if single value was given
+    if h.size == 1:
+        T = T.flat[0]
+        P = P.flat[0]
+    
+    return T, sp.sqrt(1.4*R*T), P, P/(R*T)
