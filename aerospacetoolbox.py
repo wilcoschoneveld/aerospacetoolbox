@@ -110,6 +110,9 @@ def flowisentropic(gamma, flow, mtype="mach"):
     b = (gamma-1) / 2
     c = a / (gamma-1)
 
+    #preshape mach array
+    M = sp.empty(n, sp.float64)
+
     #check what the input type is, and use the isentropic relations to solve for the mach number
     if mtype == "mach" or mtype == "m":
         if (flow < 0).any() or not sp.isreal(flow).all():
@@ -118,25 +121,21 @@ def flowisentropic(gamma, flow, mtype="mach"):
     elif mtype == "temp" or mtype == "t":
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Temperature ratio inputs must be real numbers 0 <= T <= 1.")
-        M = sp.empty(n, sp.float64)
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**(-1) - 1))
     elif mtype == "pres" or mtype == "p":
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Pressure ratio inputs must be real numbers 0 <= P <= 1.")
-        M = sp.empty(n, sp.float64)
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-gamma[flow != 0]) - 1))
     elif mtype == "dens" or mtype == "d" or mtype == "rho":
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Density ratio inputs must be real numbers 0 <= rho <= 1.")
-        M = sp.empty(n, sp.float64)
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-1) - 1))
     elif mtype == "sub" or mtype == "sup":
         if (flow < 1).any() or not sp.isreal(flow).all():
             raise Exception("Area ratio inputs must be real numbers greater than or equal to 1.")
-        M = sp.empty(n, sp.float64)
         if mtype == "sub": M[:] = 0.2 #initial guess for the subsonic solution
         if mtype == "sup": M[:] = 1.8 #initial guess for the supersonic solution
         for i in xrange(_AETB_iternum):
@@ -189,7 +188,7 @@ def flowisentropic(gamma, flow, mtype="mach"):
 
         return M, T, P, rho, area
 
-def atmosisa(h, mtype="", Toffset=0, Poffset=0):
+def atmosisa(h, mtype="geom", Toffset=0, Poffset=0):
     """
     Evaluate the international standard atmosphere (ISA) at a given altitude.
     The function assumes a continued troposphere below 0 meters and an infinite
@@ -233,8 +232,12 @@ def atmosisa(h, mtype="", Toffset=0, Poffset=0):
     Re = 6356766.0
 
     #convert altitude to geopotential altitude if needed
-    if not mtype == "geop":
+    if mtype == "geop":
+        pass
+    elif mtype == "geom":
         h *= Re / (Re + h)
+    else:
+        raise Exception("Third input must be an acceptable string to select second input parameter.")
 
     #define the international standard atmosphere
     Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
