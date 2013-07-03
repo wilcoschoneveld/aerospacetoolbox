@@ -2,14 +2,15 @@
 aerospacetoolbox.py
 
 Functions for aerospace analysis to develop and evaluate your designs.
-Currently supports the following functions: flowisentropic, atmosisa
+Currently supports the following functions:
+flowisentropic, flownormalshock, atmosisa
 
 Created to look like the equivalent set of functions in the matlab
 aerospace toolbox: http://www.mathworks.nl/help/aerotbx/index.html
 
 Author: Wilco Schoneveld
-Date: 7 June 2013
-Version: 0.2
+Date: 3 July 2013
+Version: 0.3
 """
 
 import scipy as sp
@@ -116,7 +117,7 @@ def flowisentropic(gamma, flow, mtype="mach"):
     #check what the input type is, and use the isentropic relations to solve for the mach number
     if mtype == "mach" or mtype == "m":
         if (flow < 0).any() or not sp.isreal(flow).all():
-            raise Exception("Mach number inputs must be real numbers greater than 1.")
+            raise Exception("Mach number inputs must be real numbers greater than 0.")
         M = flow
     elif mtype == "temp" or mtype == "t":
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
@@ -188,7 +189,65 @@ def flowisentropic(gamma, flow, mtype="mach"):
 
         return M, T, P, rho, area
 
-def atmosisa(h, mtype="geom", Toffset=0, Poffset=0):
+def flownormalshock(gamma, flow, mtype="mach"):
+    """
+    Normal shock relations
+    """
+
+    #convert the input values to arrays with a minimal dimension of 1
+    gamma = sp.array(gamma, sp.float64, ndmin=1)
+    flow = sp.array(flow, sp.float64, ndmin=1)
+
+    #check if the given gamma value is valid
+    if (gamma <= 1).any() or not sp.isreal(gamma).all():
+        raise Exception("Specific heat ratio inputs must be real numbers greater than 1.")
+
+    #if both inputs are non-scalar, they should be equal in shape
+    if gamma.size > 1 and flow.size > 1 and gamma.shape != flow.shape:
+        raise Exception("Inputs must be same shape or at least one input must be scalar.")
+
+    #if one of the variables is an array, the other should match it size
+    n = gamma.shape if gamma.size > flow.size else flow.shape
+    if flow.size == 1: flow = sp.ones(n, sp.float64) * flow.flat[0]
+    if gamma.size == 1: gamma = sp.ones(n, sp.float64) * gamma.flat[0]
+
+    #calculate gamma-ratios for use in the equations
+    a = (gamma+1) / 2
+    b = (gamma-1) / 2
+    c = gamma / (gamma-1)
+
+    #preshape mach array
+    M = sp.empty(n, sp.float64)
+
+    #check what the input type is, and use the normal shock relations to solve for the mach number
+    if mtype == "mach" or mtype == "m":
+        if (flow < 1).any() or not sp.isreal(flow).all():
+            raise Exception("Mach number inputs must be real numbers greater than 1.")
+        M = flow
+    else:
+        raise Exception("Third input must be an acceptable string to select second input parameter.")
+
+    #normal shock relations
+    M2 = sp.sqrt((1 + b*M**2) / (gamma*M**2 - b))
+    rho = ((gamma+1)*M**2) / (2 + (gamma-1)*M**2)
+    P = 1 + (M**2 - 1)*gamma / a
+    T = P / rho
+    P0 = P * T**(-c)
+    P1 = ((a**2*M**2) / (gamma*M**2 - b))**c * (1 - gamma + 2*gamma*M**2) / (gamma + 1)
+
+    #flatten solution if single value was given
+    if M.size == 1:
+        M = M.flat[0]
+        M2 = M2.flat[0]
+        T = T.flat[0]
+        P = P.flat[0]
+        rho = rho.flat[0]
+        P0 = P0.flat[0]
+        P1 = P1.flat[0]
+
+    return M, M2, T, P, rho, P0, P1
+
+def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     """
     Evaluate the international standard atmosphere (ISA) at a given altitude.
     The function assumes a continued troposphere below 0 meters and an infinite
@@ -196,7 +255,7 @@ def atmosisa(h, mtype="geom", Toffset=0, Poffset=0):
     a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
 
     call as:
-        [T, a, P, rho] = atmosisa(h, mtype, Toffset, Poffset)
+        [T, a, P, rho] = atmosisa(h, mtype, T0, P0)
 
     Parameters
     ----------
@@ -243,9 +302,9 @@ def atmosisa(h, mtype="geom", Toffset=0, Poffset=0):
     Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
     Lr = sp.array([-6.5, 0, 1, 2.8, 0, -2.8, -2.0], sp.float64) * 0.001
 
-    #define sea level conditions
-    Tb = 288.15 + Toffset
-    Pb = 101325.0 + Poffset
+    #define base conditions
+    Tb = T0
+    Pb = P0
 
     #create solution arrays
     T = sp.ones(h.shape, sp.float64) * Tb
