@@ -228,8 +228,18 @@ def flownormalshock(gamma, flow, mtype="mach"):
         lowerbound = sp.sqrt((gamma - 1)/(2*gamma))
         if (flow < lowerbound).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Mach number downstream inputs must be real numbers SQRT((GAMMA-1)/(2*GAMMA)) <= M <= 1.")
-        M[flow <= lowerbound*1.000001] = sp.inf
-        M[flow > lowerbound*1.000001] = sp.sqrt((1 + b*flow**2) / (gamma*flow**2 - b))
+        M[flow <= lowerbound] = sp.inf
+        M[flow > lowerbound] = sp.sqrt((1 + b*flow**2) / (gamma*flow**2 - b))
+    elif mtype in ["pres", "p"]:
+        if (flow < 1).any() or not sp.isreal(flow).all():
+            raise Exception("Pressure ratio inputs must be real numbers greater than or equal to 1.")
+        M = sp.sqrt(((flow-1)*(gamma+1)/(2*gamma)) + 1)
+    elif mtype in ["dens", "d", "rho"]:
+        upperbound = (gamma+1) / (gamma-1)
+        if (flow < 1).any() or (flow > upperbound).any() or not sp.isreal(flow).all():
+            raise Exception("Density ratio inputs must be real numbers 1 <= M <= (GAMMA+1)/(GAMMA-1).")
+        M[flow >= upperbound] = sp.inf
+        M[flow < upperbound] = sp.sqrt(2*flow / (1 + gamma + flow - flow*gamma))
     else:
         raise Exception("Third input must be an acceptable string to select second input parameter.")
 
