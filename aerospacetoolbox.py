@@ -115,26 +115,26 @@ def flowisentropic(gamma, flow, mtype="mach"):
     M = sp.empty(n, sp.float64)
 
     #check what the input type is, and use the isentropic relations to solve for the mach number
-    if mtype == "mach" or mtype == "m":
+    if mtype in ["mach", "m"]:
         if (flow < 0).any() or not sp.isreal(flow).all():
             raise Exception("Mach number inputs must be real numbers greater than 0.")
         M = flow
-    elif mtype == "temp" or mtype == "t":
+    elif mtype in ["temp", "t"]:
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Temperature ratio inputs must be real numbers 0 <= T <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**(-1) - 1))
-    elif mtype == "pres" or mtype == "p":
+    elif mtype in ["pres", "p"]:
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Pressure ratio inputs must be real numbers 0 <= P <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-gamma[flow != 0]) - 1))
-    elif mtype == "dens" or mtype == "d" or mtype == "rho":
+    elif mtype in ["dens", "d", "rho"]:
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Density ratio inputs must be real numbers 0 <= rho <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-1) - 1))
-    elif mtype == "sub" or mtype == "sup":
+    elif mtype in ["sub", "sup"]:
         if (flow < 1).any() or not sp.isreal(flow).all():
             raise Exception("Area ratio inputs must be real numbers greater than or equal to 1.")
         if mtype == "sub": M[:] = 0.2 #initial guess for the subsonic solution
@@ -220,14 +220,21 @@ def flownormalshock(gamma, flow, mtype="mach"):
     M = sp.empty(n, sp.float64)
 
     #check what the input type is, and use the normal shock relations to solve for the mach number
-    if mtype == "mach" or mtype == "m":
+    if mtype in ["mach", "m1", "m"]:
         if (flow < 1).any() or not sp.isreal(flow).all():
             raise Exception("Mach number inputs must be real numbers greater than 1.")
         M = flow
+    elif mtype in ["down", "mach2", "m2", "md"]:
+        lowerbound = sp.sqrt((gamma - 1)/(2*gamma))
+        if (flow < lowerbound).any() or (flow > 1).any() or not sp.isreal(flow).all():
+            raise Exception("Mach number downstream inputs must be real numbers SQRT((GAMMA-1)/(2*GAMMA)) <= M <= 1.")
+        M[flow <= lowerbound*1.000001] = sp.inf
+        M[flow > lowerbound*1.000001] = sp.sqrt((1 + b*flow**2) / (gamma*flow**2 - b))
     else:
         raise Exception("Third input must be an acceptable string to select second input parameter.")
 
     #normal shock relations
+        #TODO: handle M = sp.inf
     M2 = sp.sqrt((1 + b*M**2) / (gamma*M**2 - b))
     rho = ((gamma+1)*M**2) / (2 + (gamma-1)*M**2)
     P = 1 + (M**2 - 1)*gamma / a
