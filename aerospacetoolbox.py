@@ -17,7 +17,7 @@ import scipy as sp
 
 _AETB_iternum = 10
 
-def flowisentropic(gamma, flow, mtype="mach"):
+def flowisentropic(**flow):
     """
     Evaluate the isentropic relations with a given set of specific heat ratios
     and any one of the isentropic flow variables. flowisentropic returns a
@@ -25,69 +25,19 @@ def flowisentropic(gamma, flow, mtype="mach"):
     pressure ratio P, density ratio RHO, and area ratio AREA.
 
     call as:
-        [M, T, P, rho, area] = flowisentropic(gamma, flow, mtype)
-
-    Parameters
-    ----------
-    gamma : ndarray or scalar
-        Array of specific heat ratios. gamma must be a scalar or array of real
-        numbers greater than 1.
-    flow : ndarray or scalar
-        Array of real numerical values for one of the isentropic flow
-        relations. This argument can be one of the following:
-        - Mach numbers: flow must be a scalar or an array of real numbers
-        greater than or equal to 0.
-        - Temperature ratios: flow must be a scalar or an array of real numbers
-        between and including 0 and 1.
-        - Pressure ratios: flow must be a scalar or an array of real numbers
-        between and including 0 and 1.
-        - Density ratios: flow must be a scalar or an array of real numbers
-        between and including 0 and 1.
-        - Area ratios: flow must be a scalar or an array of real numbers
-        greater than or equal to 1.
-        * If flow and gamma are ndarrays, they must be the same size.
-    mtype : {'mach', 'temp', 'pres',  'dens', 'sub', 'sup'}, optional
-        A string that defines the input mode for the isentropic flow
-        in flow. This argument can be one of the following:
-        - 'mach' or 'm': Mach number (Default)
-        - 'temp' or 't': Temperature ratio.
-        - 'pres' or 'p': Pressure ratio.
-        - 'dens' or 'd' or 'rho': Density ratio.
-        - 'sub': Area ratio. Subsonic solution of the mach area relation.
-        - 'sup': Area ratio. Supersonic solution of the mach area relation.
-        
-    Returns
-    -------
-    M : ndarray or scalar
-        An array of Mach numbers.
-    T : ndarray or scalar
-        An array of temperature ratios. The temperature ratio is
-        defined as the local static temperature over the stagnation
-        temperature.
-    P : ndarray or scalar
-        An array of pressure ratios. The pressure ratio is defined
-        as the local static pressure over the stagnation pressure.
-    rho : ndarray or scalar
-        An array of density ratios. The density ratio is defined as
-        the local density over the stagnation density.
-    area : ndarray or scalar
-        An array of area ratios. The area ratio is defined as the
-        local streamtube area over the reference streamtube area for
-        sonic conditions.
-        
-    Examples
-    --------
-    >>> flowisentropic(1.4, 1.1, 'sub')
-    (0.69239913946385423, 0.91250590964351963, 0.72581326332969454,
-        0.79540664412052009, 1.0999999999999999)
-    >>> [M, T, P, rho, area] = flowisentropic(1.4, datalist, 'sub')
-    [array([...]),array([...]),array([...]),array([...]),array([...])]
-
-    References
-    ----------
-    Isentropic flow equations:
-        http://www.grc.nasa.gov/WWW/k-12/airplane/isentrop.html
+        [M, T, P, rho, area] = flowisentropic(**flow)
     """
+
+    #pop gamma from the dict, or use 1.4 for air as a default
+    gamma = flow.pop("gamma", 1.4)
+
+    #check if single input is given
+    if len(flow) != 1:
+        raise Exception("Function needs exactly one isentropic flow variable.")
+
+    #pop the flow variable and type and remove the dictionary
+    mtype, flow = flow.popitem()
+    mtype = mtype.lower()
 
     #convert the input values to arrays with a minimal dimension of 1
     gamma = sp.array(gamma, sp.float64, ndmin=1)
@@ -189,11 +139,22 @@ def flowisentropic(gamma, flow, mtype="mach"):
 
         return M, T, P, rho, area
 
-def flownormalshock(gamma, flow, mtype="mach"):
+def flownormalshock(**flow):
     """
     Normal shock relations
     """
 
+    #pop gamma from the dict, or use 1.4 for air as a default
+    gamma = flow.pop("gamma", 1.4)
+
+    #check if single input is given
+    if len(flow) != 1:
+        raise Exception("Function needs exactly one isentropic flow variable.")
+
+    #pop the flow variable and type and remove the dictionary
+    mtype, flow = flow.popitem()
+    mtype = mtype.lower()
+    
     #convert the input values to arrays with a minimal dimension of 1
     gamma = sp.array(gamma, sp.float64, ndmin=1)
     flow = sp.array(flow, sp.float64, ndmin=1)
@@ -246,7 +207,7 @@ def flownormalshock(gamma, flow, mtype="mach"):
         B = b + gamma/a - gamma*b/a - flow*a
         M = sp.sqrt((-B + sp.sqrt(B**2 - 4*b*gamma*(1-gamma/a)/a)) / (2*gamma*b/a))
     elif mtype in ["totalp", "p0"]:
-        if (flow < 0).any() and (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
             raise Exception("Total pressure ratio inputs must be real numbers 0 <= P0 <= 1.")
         M[:] = 2.0 #initial guess for the solution
         for i in xrange(_AETB_iternum):
@@ -269,13 +230,20 @@ def flownormalshock(gamma, flow, mtype="mach"):
         raise Exception("Third input must be an acceptable string to select second input parameter.")
 
     #normal shock relations
-        #TODO: handle M = sp.inf
     M2 = sp.sqrt((1 + b*M**2) / (gamma*M**2 - b))
     rho = ((gamma+1)*M**2) / (2 + (gamma-1)*M**2)
     P = 1 + (M**2 - 1)*gamma / a
     T = P / rho
     P0 = P**(1-c) * rho**(c)
     P1 = a**(2*c - 1) * M**(2*c) / (gamma*M**2 - b)**(c-1)
+
+    #handle infinite mach
+    M2[M == sp.inf] = sp.sqrt((gamma - 1)/(2*gamma))
+    T[M == sp.inf] = sp.inf
+    P[M == sp.inf] = sp.inf
+    rho[M == sp.inf] = (gamma+1) / (gamma-1)
+    P0[M == sp.inf] = 0
+    P1[M == sp.inf] = sp.inf    
 
     #flatten solution if single value was given
     if M.size == 1:
