@@ -245,6 +245,16 @@ def flownormalshock(gamma, flow, mtype="mach"):
             raise Exception("Temperature ratio inputs must be real numbers greater than 1.")
         B = b + gamma/a - gamma*b/a - flow*a
         M = sp.sqrt((-B + sp.sqrt(B**2 - 4*b*gamma*(1-gamma/a)/a)) / (2*gamma*b/a))
+    elif mtype in ["totalp", "p0"]:
+        if (flow < 0).any() and (flow > 1).any() or not sp.isreal(flow).all():
+            raise Exception("Total pressure ratio inputs must be real numbers 0 <= P0 <= 1.")
+        M[:] = 2.0 #initial guess for the solution
+        for i in xrange(_AETB_iternum):
+            f = -flow + (1 + (gamma/a)*(M**2 - 1))**(1-c) * (a*M**2 / (1 + b*M**2))**c
+            g = 2*M*(a*M**2 / (b*M**2 + 1))**(c-1)*((gamma*(M**2-1))/a + 1)**(-c) \
+                *(a*c + gamma*(-c*(b*M**4 + 1) + b*M**4 + M**2)) / (b*M**2 + 1)**2
+            M = M - (f / g) #Newton-Raphson
+        M[flow == 0] = sp.inf
     elif mtype in ["pito", "pitot", "rpr"]:
         lowerbound = a**c
         if (flow < lowerbound).any() or not sp.isreal(flow).all():
@@ -264,7 +274,7 @@ def flownormalshock(gamma, flow, mtype="mach"):
     rho = ((gamma+1)*M**2) / (2 + (gamma-1)*M**2)
     P = 1 + (M**2 - 1)*gamma / a
     T = P / rho
-    P0 = P * T**(-c)
+    P0 = P**(1-c) * rho**(c)
     P1 = a**(2*c - 1) * M**(2*c) / (gamma*M**2 - b)**(c-1)
 
     #flatten solution if single value was given
