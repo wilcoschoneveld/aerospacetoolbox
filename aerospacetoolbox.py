@@ -9,13 +9,46 @@ Created to look like the equivalent set of functions in the matlab
 aerospace toolbox: http://www.mathworks.nl/help/aerotbx/index.html
 
 Author: Wilco Schoneveld
-Date: 3 July 2013
-Version: 0.3
+Date: 5 July 2013
+Version: 0.4
 """
 
 import scipy as sp
 
 _AETB_iternum = 10
+
+def _flowinput(flow):
+    #pop flow from the input
+    gamma = flow.pop("gamma", 1.4)
+
+    #check if single input is given
+    if len(flow) != 1:
+        raise Exception("Function needs exactly one flow variable.")
+
+    #pop the flow variable and type
+    mtype, flow = flow.popitem()
+
+    if not sp.isreal(gamma).all() or not sp.isreal(flow).all():
+        raise Exception("Flow input variables must be real numbers.")
+
+    #convert the input values to arrays with a minimal dimension of 1
+    gamma = sp.array(gamma, sp.float64, ndmin=1)
+    flow = sp.array(flow, sp.float64, ndmin=1)
+
+    #check if the given gamma value is valid
+    if (gamma <= 1).any():
+        raise Exception("Specific heat ratio inputs must be real numbers greater than 1.")
+
+    #if both inputs are non-scalar, they should be equal in shape
+    if gamma.size > 1 and flow.size > 1 and gamma.shape != flow.shape:
+        raise Exception("Inputs must be same shape or at least one input must be scalar.")
+
+    #if one of the variables is an array, the other should match it size
+    n = gamma.shape if gamma.size > flow.size else flow.shape
+    if flow.size == 1: flow = sp.ones(n, sp.float64) * flow.flat[0]
+    if gamma.size == 1: gamma = sp.ones(n, sp.float64) * gamma.flat[0]
+
+    return gamma, flow, mtype.lower()    
 
 def flowisentropic(**flow):
     """
@@ -28,33 +61,8 @@ def flowisentropic(**flow):
         [M, T, P, rho, area] = flowisentropic(**flow)
     """
 
-    #pop gamma from the dict, or use 1.4 for air as a default
-    gamma = flow.pop("gamma", 1.4)
-
-    #check if single input is given
-    if len(flow) != 1:
-        raise Exception("Function needs exactly one isentropic flow variable.")
-
-    #pop the flow variable and type and remove the dictionary
-    mtype, flow = flow.popitem()
-    mtype = mtype.lower()
-
-    #convert the input values to arrays with a minimal dimension of 1
-    gamma = sp.array(gamma, sp.float64, ndmin=1)
-    flow = sp.array(flow, sp.float64, ndmin=1)
-
-    #check if the given gamma value is valid
-    if (gamma <= 1).any() or not sp.isreal(gamma).all():
-        raise Exception("Specific heat ratio inputs must be real numbers greater than 1.")
-
-    #if both inputs are non-scalar, they should be equal in shape
-    if gamma.size > 1 and flow.size > 1 and gamma.shape != flow.shape:
-        raise Exception("Inputs must be same shape or at least one input must be scalar.")
-
-    #if one of the variables is an array, the other should match it size
-    n = gamma.shape if gamma.size > flow.size else flow.shape
-    if flow.size == 1: flow = sp.ones(n, sp.float64) * flow.flat[0]
-    if gamma.size == 1: gamma = sp.ones(n, sp.float64) * gamma.flat[0]
+    #parse the input
+    gamma, flow, mtype = _flowinput(flow)
 
     #calculate gamma-ratios for use in the equations
     a = (gamma+1) / 2
@@ -62,7 +70,7 @@ def flowisentropic(**flow):
     c = a / (gamma-1)
 
     #preshape mach array
-    M = sp.empty(n, sp.float64)
+    M = sp.empty(flow.shape, sp.float64)
 
     #check what the input type is, and use the isentropic relations to solve for the mach number
     if mtype in ["mach", "m"]:
@@ -144,33 +152,8 @@ def flownormalshock(**flow):
     Normal shock relations
     """
 
-    #pop gamma from the dict, or use 1.4 for air as a default
-    gamma = flow.pop("gamma", 1.4)
-
-    #check if single input is given
-    if len(flow) != 1:
-        raise Exception("Function needs exactly one isentropic flow variable.")
-
-    #pop the flow variable and type and remove the dictionary
-    mtype, flow = flow.popitem()
-    mtype = mtype.lower()
-    
-    #convert the input values to arrays with a minimal dimension of 1
-    gamma = sp.array(gamma, sp.float64, ndmin=1)
-    flow = sp.array(flow, sp.float64, ndmin=1)
-
-    #check if the given gamma value is valid
-    if (gamma <= 1).any() or not sp.isreal(gamma).all():
-        raise Exception("Specific heat ratio inputs must be real numbers greater than 1.")
-
-    #if both inputs are non-scalar, they should be equal in shape
-    if gamma.size > 1 and flow.size > 1 and gamma.shape != flow.shape:
-        raise Exception("Inputs must be same shape or at least one input must be scalar.")
-
-    #if one of the variables is an array, the other should match it size
-    n = gamma.shape if gamma.size > flow.size else flow.shape
-    if flow.size == 1: flow = sp.ones(n, sp.float64) * flow.flat[0]
-    if gamma.size == 1: gamma = sp.ones(n, sp.float64) * gamma.flat[0]
+    #parse the input
+    gamma, flow, mtype = _flowinput(flow)
 
     #calculate gamma-ratios for use in the equations
     a = (gamma+1) / 2
@@ -178,7 +161,7 @@ def flownormalshock(**flow):
     c = gamma / (gamma-1)
 
     #preshape mach array
-    M = sp.empty(n, sp.float64)
+    M = sp.empty(flow.shape, sp.float64)
 
     #check what the input type is, and use the normal shock relations to solve for the mach number
     if mtype in ["mach", "m1", "m"]:
