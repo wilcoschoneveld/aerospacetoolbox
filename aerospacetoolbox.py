@@ -3,14 +3,15 @@ aerospacetoolbox.py
 
 Functions for aerospace analysis to develop and evaluate your designs.
 Currently supports the following functions:
-flowisentropic, flownormalshock, atmosisa
+Gas Dynamics - flowisentropic, flownormalshock, flowprandtlmeyer
+Environment - atmosisa
 
 Created to look like the equivalent set of functions in the matlab
 aerospace toolbox: http://www.mathworks.nl/help/aerotbx/index.html
 
 Author: Wilco Schoneveld
 Date: 5 July 2013
-Version: 0.4
+Version: 0.5
 """
 
 import scipy as sp
@@ -75,7 +76,7 @@ def flowisentropic(**flow):
     #check what the input type is, and use the isentropic relations to solve for the mach number
     if mtype in ["mach", "m"]:
         if (flow < 0).any() or not sp.isreal(flow).all():
-            raise Exception("Mach number inputs must be real numbers greater than 0.")
+            raise Exception("Mach number inputs must be real numbers greater than or equal to 0.")
         M = flow
     elif mtype in ["temp", "t"]:
         if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
@@ -104,7 +105,7 @@ def flowisentropic(**flow):
             M = M - (f / g) #Newton-Raphson
         M[flow == 1] = 1
     else:
-        raise Exception("Third input must be an acceptable string to select second input parameter.")
+        raise Exception("Keyword input must be an acceptable string to select input parameter.")
 
     #if single mach number is calculated
     if M.size == 1:
@@ -166,7 +167,7 @@ def flownormalshock(**flow):
     #check what the input type is, and use the normal shock relations to solve for the mach number
     if mtype in ["mach", "m1", "m"]:
         if (flow < 1).any() or not sp.isreal(flow).all():
-            raise Exception("Mach number inputs must be real numbers greater than 1.")
+            raise Exception("Mach number inputs must be real numbers greater than or equal to 1.")
         M = flow
     elif mtype in ["down", "mach2", "m2", "md"]:
         lowerbound = sp.sqrt((gamma - 1)/(2*gamma))
@@ -186,7 +187,7 @@ def flownormalshock(**flow):
         M[flow < upperbound] = sp.sqrt(2*flow / (1 + gamma + flow - flow*gamma))
     elif mtype in ["temp", "t"]:
         if (flow < 1).any() or not sp.isreal(flow).all():
-            raise Exception("Temperature ratio inputs must be real numbers greater than 1.")
+            raise Exception("Temperature ratio inputs must be real numbers greater than or equal to 1.")
         B = b + gamma/a - gamma*b/a - flow*a
         M = sp.sqrt((-B + sp.sqrt(B**2 - 4*b*gamma*(1-gamma/a)/a)) / (2*gamma*b/a))
     elif mtype in ["totalp", "p0"]:
@@ -210,7 +211,7 @@ def flownormalshock(**flow):
             g = 2*K*M**(2*c - 1) * (gamma*M**2 - b)**(-c) * (gamma*M**2 - b*c) #derivative
             M = M - (f / g) #Newton-Raphson
     else:
-        raise Exception("Third input must be an acceptable string to select second input parameter.")
+        raise Exception("Keyword input must be an acceptable string to select input parameter.")
 
     #normal shock relations
     M2 = sp.sqrt((1 + b*M**2) / (gamma*M**2 - b))
@@ -239,6 +240,54 @@ def flownormalshock(**flow):
         P1 = P1.flat[0]
 
     return M, M2, T, P, rho, P0, P1
+
+def flowprandtlmeyer(**flow):
+    """
+    Prandtl-Meyer functions for expansion waves
+    """
+
+    #parse the input
+    gamma, flow, mtype = _flowinput(flow)
+
+    #calculate gamma-ratios for use in the equations
+    l = sp.sqrt((gamma-1)/(gamma+1))
+
+    #preshape mach array
+    M = sp.empty(flow.shape, sp.float64)
+
+    #check what the input type is, and use the normal shock relations to solve for the mach number
+    if mtype in ["mach", "m"]:
+        if (flow < 1).any():
+            raise Exception("Mach number inputs must be real numbers greater than or equal to 1.")
+        M = flow
+    elif mtype in ["mu", "machangle"]:
+        if (flow < 0).any() or  (flow > 90).any():
+            raise Exception("Mach angle inputs must be real numbers 0 <= M <= 90.")
+        M = 1 / sp.sin(sp.deg2rad(flow))
+    elif mtype in ["nu", "pm", "pmangle"]:
+        if (flow < 0).any() or  (flow > 90*((1/l)-1)).any():
+            raise Exception("Prandtl-Meyer angle inputs must be real numbers 0 <= M <= 90*(sqrt((g+1)/(g-1))-1).")
+        M[:] = 2 #initial guess for the solution
+        for i in xrange(_AETB_iternum):
+            b = sp.sqrt(M**2 - 1)
+            f = -sp.deg2rad(flow) + (1/l) * sp.arctan(l*b) - sp.arctan(b)
+            g = b*(1 - l**2) / (M*(1 + (l**2)*(b**2))) #derivative
+            M = M - (f / g) #Newton-Raphson
+    else:
+        raise Exception("Keyword input must be an acceptable string to select input parameter.")
+
+    #normal shock relations
+    b = sp.sqrt(M**2 - 1)
+    V = (1/l) * sp.arctan(l*b) - sp.arctan(b)
+    U = sp.arcsin(1 / M)
+
+    #flatten solution if single value was given
+    if M.size == 1:
+        M = M.flat[0]
+        V = V.flat[0]
+        U = U.flat[0]
+        
+    return M, sp.rad2deg(V), sp.rad2deg(U)
 
 def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     """
@@ -289,7 +338,7 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     elif mtype == "geom":
         h *= Re / (Re + h)
     else:
-        raise Exception("Third input must be an acceptable string to select second input parameter.")
+        raise Exception("mtype input must be an acceptable string to select second input parameter.")
 
     #define the international standard atmosphere
     Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
