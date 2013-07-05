@@ -240,6 +240,21 @@ def flownormalshock(gamma, flow, mtype="mach"):
             raise Exception("Density ratio inputs must be real numbers 1 <= M <= (GAMMA+1)/(GAMMA-1).")
         M[flow >= upperbound] = sp.inf
         M[flow < upperbound] = sp.sqrt(2*flow / (1 + gamma + flow - flow*gamma))
+    elif mtype in ["temp", "t"]:
+        if (flow < 1).any() or not sp.isreal(flow).all():
+            raise Exception("Temperature ratio inputs must be real numbers greater than 1.")
+        B = b + gamma/a - gamma*b/a - flow*a
+        M = sp.sqrt((-B + sp.sqrt(B**2 - 4*b*gamma*(1-gamma/a)/a)) / (2*gamma*b/a))
+    elif mtype in ["pito", "pitot", "rpr"]:
+        lowerbound = a**c
+        if (flow < lowerbound).any() or not sp.isreal(flow).all():
+            raise Exception("Rayleigh-Pitot ratio inputs must be real numbers greater than or equal to ((G+1)/2)**(-G/(G+1)).")
+        M[:] = 5.0 #initial guess for the solution
+        K = a**(2*c - 1)
+        for i in xrange(_AETB_iternum):
+            f = -flow + K * M**(2*c) / (gamma*M**2 - b)**(c-1) #Rayleigh-Pitot relation
+            g = 2*K*M**(2*c - 1) * (gamma*M**2 - b)**(-c) * (gamma*M**2 - b*c) #derivative
+            M = M - (f / g) #Newton-Raphson
     else:
         raise Exception("Third input must be an acceptable string to select second input parameter.")
 
@@ -250,7 +265,7 @@ def flownormalshock(gamma, flow, mtype="mach"):
     P = 1 + (M**2 - 1)*gamma / a
     T = P / rho
     P0 = P * T**(-c)
-    P1 = ((a**2*M**2) / (gamma*M**2 - b))**c * (1 - gamma + 2*gamma*M**2) / (gamma + 1)
+    P1 = a**(2*c - 1) * M**(2*c) / (gamma*M**2 - b)**(c-1)
 
     #flatten solution if single value was given
     if M.size == 1:
