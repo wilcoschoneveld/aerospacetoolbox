@@ -91,6 +91,8 @@ def flowisentropic(**flow):
     else:
         raise Exception("Keyword input must be an acceptable string to select input parameter.")
 
+    #The following should be rewritten
+    
     #if single mach number is calculated
     if M.size == 1:
         #flatten the values to a scalar
@@ -123,7 +125,7 @@ def flowisentropic(**flow):
         rho = d**(-1/(gamma-1))
 
         #start with the mach-area limits
-        area = sp.zeros(n, sp.float64)
+        area = sp.zeros(M.shape, sp.float64)
         area[M == 0] = sp.inf
 
         #calculate the mach-area relation only when non-zero and non-infinite
