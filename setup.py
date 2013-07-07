@@ -7,6 +7,6 @@ setup(name = 'aerospacetoolbox',
       author_email = 'schoneveld.wj@gmail.com',
       url = 'https://github.com/wilcoschoneveld/aerospacetoolbox',
       requires = ['scipy'],
-      package_dir = {'aerospacetoolbox' : 'src'},
+      #package_dir = {'aerospacetoolbox' : 'src'},
       packages = ['aerospacetoolbox'],
      )

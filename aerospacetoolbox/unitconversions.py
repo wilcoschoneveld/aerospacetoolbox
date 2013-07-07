@@ -6,8 +6,15 @@ import scipy as sp
 #for non-linear relations:
 #- list = [unit to SI, SI to unit]
 
-#acceleration
-_cacc = 1
+#acceleration (done)
+_cacc = {'m/s^2': 1.0,
+         'g': 9.80665,
+         'km/s^2': 1000.0,
+         'in/s^2': 0.0254,
+         'ft/s^2': 0.3048,
+         'km/h-s': 1 / 3.6,
+         'mph/s': 5280 * 0.3048 / 3600}
+         
 
 #angle (done)
 _cang = {'rad': 1.0,
@@ -32,8 +39,8 @@ _clen = {'m': 1.0,
          'mi': 5280 * 0.3048,
          'nmi': 1852.0,
          'in': 0.0254,
-         'ft': 0.0254 * 12,
-         'yd': 0.0254 * 36,
+         'ft': 0.3048,
+         'yd': 0.9144,
          'pt': 0.0254 / 72}
 
 #mass
