@@ -36,6 +36,7 @@ with open('main.tex', 'w') as f:
     f.write('\\hline \\\\ $M$ & $\\frac{p_0}{p}$ & $\\frac{\\rho_0}{\\rho}$ & ' + \
             '$\\frac{T_0}{T}$ & $\\frac{A}{A^\\ast}$ \\\\ \\\\ \\hline \\\\ \n')
     f.write('\\endhead\n')
+    f.write('\\\\ \\hline \\endlastfoot\n')
     for i in xrange(M.size):
         f.write(tablestr(M[i]) + ' & ' + \
                 tablestr(1 / P[i]) + ' & ' + \
@@ -46,6 +47,6 @@ with open('main.tex', 'w') as f:
             f.write('\\\\\n')
     f.write('\\end{longtable}\n')
     f.write('\\end{center}\n')
-    f.write('\\end{document}\n')
+    f.write('\\end{document}')
 
 print "main.tex created and closed."
