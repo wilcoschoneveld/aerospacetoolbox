@@ -1,10 +1,14 @@
 import scipy as sp
+import scipy.interpolate
+from pkg_resources import resource_string
+
+_EGM96 = None
 
 def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     """
     Evaluate the international standard atmosphere (ISA) at a given altitude.
     The function assumes a continued troposphere below 0 meters and an infinite
-    mesosphere above 71 kilometers geopotential height. atmosisa returns
+    mesosphere above 84 kilometers geopotential height. atmosisa returns
     a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
 
     call as:
@@ -94,3 +98,18 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
         P = P.flat[0]
     
     return T, sp.sqrt(1.4*R*T), P, P/(R*T)
+
+def geoidheight(lat, lon, n=10, m='cubic'):
+    global _EGM96
+    if _EGM96 is None:
+        dtp = sp.dtype(sp.int16).newbyteorder('B')
+        floc = resource_string(__name__, 'egm96.dac')
+        _EGM96 = sp.fromstring(floc, dtp).reshape((721, 1440)) / 100.0
+
+    lons, lats = sp.meshgrid(sp.linspace(0, 360, 1440, False),
+                             sp.linspace(90, -90, 721))
+
+    sel = (lat - lats)**2 + (lon - lons)**2 < n / (16*sp.pi)
+
+    return sp.interpolate.griddata((lats[sel], lons[sel]),
+                                   _EGM96[sel], (lat, lon), m)

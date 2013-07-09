@@ -229,7 +229,7 @@ def flownormalshock(**flow):
 
 def flowprandtlmeyer(**flow):
     """
-    Prandtl-Meyer functions for expansion waves
+    Prandtl-Meyer function for expansion waves
     """
 
     #parse the input
