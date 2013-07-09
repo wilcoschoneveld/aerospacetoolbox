@@ -5,7 +5,7 @@ Functions for aerospace analysis to develop and evaluate your designs. Currently
 
 Environment (accepts multidimensional arrays as input)
 - atmosisa: Evaluate the international standard atmosphere (ISA) at a given altitude. The function assumes a continued troposphere below 0 meters and an infinite mesosphere above 71 kilometers geopotential height.
-- geoidheight: Calculates the geoid height using the EGM96 Geopotential Model.
+- geoidheight: Calculate the geoid height using the EGM96 Geopotential Model.
 
 Gas Dynamics (can convert multidimensional arrays from any property to another):
 - flowisentropic: Isentropic relations with a given set of specific heat ratios and any one of the isentropic flow variables.

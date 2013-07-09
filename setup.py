@@ -10,6 +10,6 @@ setup(
     install_requires = ['scipy'],
     packages = find_packages(exclude=['tests']),
     package_data = {
-        '': ['*.dac']
+        '': ['egm96.dac']
     }
 )
