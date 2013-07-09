@@ -24,8 +24,8 @@ dist = np.matrix("""
 data1 = np.loadtxt("hswtdata_example.txt", skiprows=5)
 
 #use the distribution data to calculate the theoretical isentropic flow
-[m1, t1, p1, r1, a1] = flowisentropic(sub=dist[:,2])
-[m2, t2, p2, r2, a2] = flowisentropic(sup=dist[:,2])
+m1, t1, p1, r1, a1 = flowisentropic(sub=dist[:,2])
+m2, t2, p2, r2, a2 = flowisentropic(sup=dist[:,2])
 
 #Stich the subsonic and supersonic solutions together
 psubsup = np.vstack((p1[:9],p2[9:]))

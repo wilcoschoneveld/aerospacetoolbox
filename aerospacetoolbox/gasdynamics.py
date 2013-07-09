@@ -43,7 +43,7 @@ def flowisentropic(**flow):
     pressure ratio P, density ratio RHO, and area ratio AREA.
 
     call as:
-        [M, T, P, rho, area] = flowisentropic(**flow)
+        M, T, P, rho, area = flowisentropic(**flow)
     """
 
     #parse the input
