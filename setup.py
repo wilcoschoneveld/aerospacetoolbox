@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'aerospacetoolbox',
-    version = '0.6',
+    version = '0.7',
     description = 'Aerospace Toolbox',
     author = 'Wilco Schoneveld',
     author_email = 'schoneveld.wj@gmail.com',
