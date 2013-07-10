@@ -63,22 +63,22 @@ def flowisentropic(**flow):
             raise Exception("Mach number inputs must be real numbers greater than or equal to 0.")
         M = flow
     elif mtype in ["temp", "t"]:
-        if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < 0).any() or (flow > 1).any():
             raise Exception("Temperature ratio inputs must be real numbers 0 <= T <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**(-1) - 1))
     elif mtype in ["pres", "p"]:
-        if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < 0).any() or (flow > 1).any():
             raise Exception("Pressure ratio inputs must be real numbers 0 <= P <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-gamma[flow != 0]) - 1))
     elif mtype in ["dens", "d", "rho"]:
-        if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < 0).any() or (flow > 1).any():
             raise Exception("Density ratio inputs must be real numbers 0 <= rho <= 1.")
         M[flow == 0] = sp.inf
         M[flow != 0] = sp.sqrt((1/b[flow != 0])*(flow[flow != 0]**((gamma[flow != 0]-1)/-1) - 1))
     elif mtype in ["sub", "sup"]:
-        if (flow < 1).any() or not sp.isreal(flow).all():
+        if (flow < 1).any():
             raise Exception("Area ratio inputs must be real numbers greater than or equal to 1.")
         if mtype == "sub": M[:] = 0.2 #initial guess for the subsonic solution
         if mtype == "sup": M[:] = 1.8 #initial guess for the supersonic solution
@@ -152,12 +152,12 @@ def flownormalshock(**flow):
 
     #check what the input type is, and use the normal shock relations to solve for the mach number
     if mtype in ["mach", "m1", "m"]:
-        if (flow < 1).any() or not sp.isreal(flow).all():
+        if (flow < 1).any():
             raise Exception("Mach number inputs must be real numbers greater than or equal to 1.")
         M = flow
     elif mtype in ["down", "mach2", "m2", "md"]:
         lowerbound = sp.sqrt((gamma - 1)/(2*gamma))
-        if (flow < lowerbound).any() or (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < lowerbound).any() or (flow > 1).any():
             raise Exception("Mach number downstream inputs must be real numbers SQRT((GAMMA-1)/(2*GAMMA)) <= M <= 1.")
         M[flow <= lowerbound] = sp.inf
         M[flow > lowerbound] = sp.sqrt((1 + b*flow**2) / (gamma*flow**2 - b))
@@ -167,17 +167,17 @@ def flownormalshock(**flow):
         M = sp.sqrt(((flow-1)*(gamma+1)/(2*gamma)) + 1)
     elif mtype in ["dens", "d", "rho"]:
         upperbound = (gamma+1) / (gamma-1)
-        if (flow < 1).any() or (flow > upperbound).any() or not sp.isreal(flow).all():
+        if (flow < 1).any() or (flow > upperbound).any():
             raise Exception("Density ratio inputs must be real numbers 1 <= M <= (GAMMA+1)/(GAMMA-1).")
         M[flow >= upperbound] = sp.inf
         M[flow < upperbound] = sp.sqrt(2*flow / (1 + gamma + flow - flow*gamma))
     elif mtype in ["temp", "t"]:
-        if (flow < 1).any() or not sp.isreal(flow).all():
+        if (flow < 1).any():
             raise Exception("Temperature ratio inputs must be real numbers greater than or equal to 1.")
         B = b + gamma/a - gamma*b/a - flow*a
         M = sp.sqrt((-B + sp.sqrt(B**2 - 4*b*gamma*(1-gamma/a)/a)) / (2*gamma*b/a))
     elif mtype in ["totalp", "p0"]:
-        if (flow < 0).any() or (flow > 1).any() or not sp.isreal(flow).all():
+        if (flow < 0).any() or (flow > 1).any():
             raise Exception("Total pressure ratio inputs must be real numbers 0 <= P0 <= 1.")
         M[:] = 2.0 #initial guess for the solution
         for i in xrange(_AETB_iternum):
@@ -188,7 +188,7 @@ def flownormalshock(**flow):
         M[flow == 0] = sp.inf
     elif mtype in ["pito", "pitot", "rpr"]:
         lowerbound = a**c
-        if (flow < lowerbound).any() or not sp.isreal(flow).all():
+        if (flow < lowerbound).any():
             raise Exception("Rayleigh-Pitot ratio inputs must be real numbers greater than or equal to ((G+1)/2)**(-G/(G+1)).")
         M[:] = 5.0 #initial guess for the solution
         K = a**(2*c - 1)

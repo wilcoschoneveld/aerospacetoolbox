@@ -1,8 +1,26 @@
 import scipy as sp
-import scipy.interpolate
+from scipy.interpolate import RectSphereBivariateSpline
 from pkg_resources import resource_string
 
 _EGM96 = None
+
+def _loadEGM96():
+    #load the data resource file into a string
+    flc = resource_string(__name__, 'egm96.dac')
+
+    #setup basic coordinates
+    lon = sp.linspace(0, 2*sp.pi, 1440, False)
+    lat = sp.linspace(0, sp.pi, 721)
+
+    #parse the raw data string
+    data = sp.fromstring(flc, sp.dtype(sp.int16).newbyteorder('B'),
+                 1038240, '').reshape((lat.size, lon.size)) / 100.0
+
+    #interpolate the bad boy
+    lut = RectSphereBivariateSpline(lat[1: -1], lon, data[1: -1],
+               pole_values = (sp.mean(data[1]), sp.mean(data[-1])))
+
+    return lut
 
 def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     """
@@ -99,24 +117,6 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     
     return T, sp.sqrt(1.4*R*T), P, P/(R*T)
 
-def _loadEGM96():
-    #load the data resource file into a string
-    flc = resource_string(__name__, 'egm96.dac')
-
-    #parse the raw data string
-    data = sp.fromstring(flc, sp.dtype(sp.int16).newbyteorder('B')
-                              ).reshape((721, 1440))[1:-1] / 100.0
-
-    #setup basic coordinates
-    lon = sp.linspace(0, 2*sp.pi, 1440, False)
-    lat = sp.linspace(0, sp.pi, 721)[1: -1]
-
-    #interpolate the bad boy
-    lut = sp.interpolate.RectSphereBivariateSpline(lat, lon, data,
-                                                   pole_values=(13.61, -29.53))
-
-    return lut
-
 def geoidheight(lat, lon):
     """
     Calculate the geoid height using the EGM96 Geopotential Model.
@@ -124,8 +124,32 @@ def geoidheight(lat, lon):
 
     global _EGM96
 
+    lat = sp.array(lat, sp.float64, ndmin=1)
+    lon = sp.array(lon, sp.float64, ndmin=1)
+
+    if lat.shape != lon.shape:
+        raise Exception("Inputs must contain equal number of values.")
+
+    if (lat < -90).any() or (lat > 90).any() or not sp.isreal(lat).all():
+        raise Exception("Lateral coordinates must be real numbers between -90 and 90 degrees.")
+
+    if (lon < 0).any() or (lon > 360).any() or not sp.isreal(lon).all():
+        raise Exception("Longitudinal coordinates must be real numbers between 0 and 360 degrees.")
+
     #if the model is not loaded, do so
     if _EGM96 is None: _EGM96 = _loadEGM96()
 
     #todo: handle array input
-    return _EGM96.ev((-lat + 90.0)*sp.pi/180.0, lon*sp.pi/180.0)
+
+    #shift lateral values to the right reference and flatten coordinates
+    lats = sp.deg2rad(-lat + 90).ravel()
+    lons = sp.deg2rad(lon).ravel()
+
+    #evaluate the spline and reshape the result
+    evl = _EGM96.ev(lats, lons).reshape(lat.shape)
+
+    #flatten solution if single value was given
+    if evl.size == 1:
+        evl = evl.flat[0]
+
+    return evl
