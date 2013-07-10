@@ -99,27 +99,33 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     
     return T, sp.sqrt(1.4*R*T), P, P/(R*T)
 
-def geoidheight(lat, lon, n=10, m='cubic'):
+def _loadEGM96():
+    #load the data resource file into a string
+    flc = resource_string(__name__, 'egm96.dac')
+
+    #parse the raw data string
+    data = sp.fromstring(flc, sp.dtype(sp.int16).newbyteorder('B')
+                              ).reshape((721, 1440))[1:-1] / 100.0
+
+    #setup basic coordinates
+    lon = sp.linspace(0, 2*sp.pi, 1440, False)
+    lat = sp.linspace(0, sp.pi, 721)[1: -1]
+
+    #interpolate the bad boy
+    lut = sp.interpolate.RectSphereBivariateSpline(lat, lon, data,
+                                                   pole_values=(13.61, -29.53))
+
+    return lut
+
+def geoidheight(lat, lon):
     """
     Calculate the geoid height using the EGM96 Geopotential Model.
     """
 
-    #if the model is not loaded, do so
     global _EGM96
-    if _EGM96 is None:
-        dtp = sp.dtype(sp.int16).newbyteorder('B')
-        floc = resource_string(__name__, 'egm96.dac')
-        _EGM96 = sp.fromstring(floc, dtp).reshape((721, 1440)) / 100.0
 
-    #create a meshgrid with the coordinates
-    lons, lats = sp.meshgrid(sp.linspace(0, 360, 1440, False),
-                             sp.linspace(90, -90, 721))
+    #if the model is not loaded, do so
+    if _EGM96 is None: _EGM96 = _loadEGM96()
 
-    #select portion of meshgrid within a specific range
-    sel = (lat - lats)**2 + (lon - lons)**2 < n / (16*sp.pi)
-
-    #interpolate the selected data
-    h = sp.interpolate.griddata((lats[sel], lons[sel]),
-                                _EGM96[sel], (lat, lon), m)
-
-    return h.flat[0]
+    #todo: handle array input
+    return _EGM96.ev((-lat + 90.0)*sp.pi/180.0, lon*sp.pi/180.0)
