@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from aerospacetoolbox import *
+from aerotbx import flowisentropic
 
 #import the windtunnel distribution data (from the HSWTT reader, Table 2)
 dist = np.matrix("""

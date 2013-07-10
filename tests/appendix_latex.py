@@ -4,7 +4,7 @@ Re-create the isentropic flow table as seen in
 """
 
 import scipy as sp
-from aerospacetoolbox import flowisentropic
+from aerotbx import flowisentropic
 
 def tablestr(v):
     e = sp.floor(sp.log10(v)) + 1
