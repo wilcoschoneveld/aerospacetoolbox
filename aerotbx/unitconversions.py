@@ -9,6 +9,7 @@ import scipy as sp
 #acceleration
 _cacc = {'m/s^2': 1.0,
          'g': 9.80665,
+         'gal': 0.01,
          'km/s^2': 1000.0,
          'in/s^2': 0.0254,
          'ft/s^2': 0.3048,
