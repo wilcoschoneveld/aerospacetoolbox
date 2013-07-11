@@ -6,7 +6,7 @@ _EGM96 = None
 
 def _loadEGM96():
     #load the data resource file into a string
-    flc = resource_string(__name__, 'egm96.dac')
+    flc = resource_string(__name__, 'data/egm96.dac')
 
     #setup basic coordinates
     lon = sp.linspace(0, 2*sp.pi, 1440, False)
