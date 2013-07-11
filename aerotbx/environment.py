@@ -22,7 +22,7 @@ def _loadEGM96():
 
     return lut
 
-def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
+def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
     """
     Evaluate the international standard atmosphere (ISA) at a given altitude.
     The function assumes a continued troposphere below 0 meters and an infinite
@@ -30,21 +30,7 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
 
     call as:
-        [T, a, P, rho] = atmosisa(h, mtype, T0, P0)
-
-    Parameters
-    ----------
-
-        
-    Returns
-    -------
-
-        
-    Examples
-    --------
-    >>> atmosisa(-2000)
-    (301.15409141737081, 347.88799859305686, 127782.84080627175,
-        1.4781608008362668)
+        [T, a, P, rho] = atmosisa(h, geopotential, T0, P0)
 
     References
     ----------
@@ -66,12 +52,8 @@ def atmosisa(h, mtype="geom", T0=288.15, P0=101325.0):
     Re = 6356766.0
 
     #convert altitude to geopotential altitude if needed
-    if mtype == "geop":
-        pass
-    elif mtype == "geom":
+    if not geopotential:
         h *= Re / (Re + h)
-    else:
-        raise Exception("mtype input must be an acceptable string to select second input parameter.")
 
     #define the international standard atmosphere
     Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
