@@ -39,7 +39,9 @@ _cden = {'kg/m^3': 1.0,
 
 #force
 _cfor = {'N': 1.0,
-         'lbf': 0.45359237 * 9.80665}
+         'kgf': 9.80665,
+         'lbf': 0.45359237 * 9.80665,
+         'dyne': 0.001 * 0.01}
 
 #length
 _clen = {'m': 1.0,
@@ -84,8 +86,14 @@ _cvel = {'m/s': 1.0,
          'kts': 1852.0 / 3600,
          'ft/min': 0.3048 / 60}
 
-_cnvts = [_cacc, _cang, _canv, _cana, _cden,
-          _cfor, _clen, _cmas, _cpre, _ctem, _cvel]
+#energy
+_cene = {'J': 1.0,
+         'kwh': 1000.0 * 3600,
+         'cal': 4.184,
+         'ftlb': 0.3048 * 0.45359237 * 9.80665}
+
+_cnvts = [_cacc, _cang, _canv, _cana, _cden, _cfor,
+          _clen, _cmas, _cpre, _ctem, _cvel, _cene]
 
 def convert(v, frm, to):
     for cnvt in _cnvts:
