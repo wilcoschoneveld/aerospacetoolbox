@@ -1,4 +1,5 @@
 import scipy as sp
+from aerotbx.utils import to_ndarray, from_ndarray
 
 #for linear relations:
 #- float = unit to SI
@@ -96,6 +97,7 @@ _cnvts = [_cacc, _cang, _canv, _cana, _cden, _cfor,
           _clen, _cmas, _cpre, _ctem, _cvel, _cene]
 
 def convert(v, frm, to):
+    t, v = to_ndarray(v)
     for cnvt in _cnvts:
         if frm in cnvt and to in cnvt:
             if isinstance(cnvt[frm], list):
@@ -103,7 +105,7 @@ def convert(v, frm, to):
             else:
                 bv = v * cnvt[frm]
             if isinstance(cnvt[to], list):
-                return cnvt[to][1](bv)
+                return from_ndarray(t, cnvt[to][1](bv))
             else:
-                return bv / cnvt[to]
+                return from_ndarray(t, bv / cnvt[to])
     raise ValueError('Could not convert between given units.')
