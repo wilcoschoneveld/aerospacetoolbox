@@ -1,11 +1,14 @@
 import scipy as sp
+from types import ListType
 from aerotbx.utils import to_ndarray, from_ndarray
 
-#for linear relations:
-#- float = unit to SI
+"""
+for linear relations:
+- float = unit to SI
 
-#for non-linear relations:
-#- list = [unit to SI, SI to unit]
+for non-linear relations:
+- list = [unit to SI, SI to unit]
+"""
 
 #acceleration
 _cacc = {'m/s^2': 1.0,
@@ -96,16 +99,29 @@ _cene = {'J': 1.0,
 _cnvts = [_cacc, _cang, _canv, _cana, _cden, _cfor,
           _clen, _cmas, _cpre, _ctem, _cvel, _cene]
 
-def convert(v, frm, to):
-    itype, v = to_ndarray(v)
+def convert(value, frm, to):
+    """convert input from one unit (frm) to another (to)
+    """
+
+    itype, v = to_ndarray(value)
+
+    #loop through all converters and search for pairs
     for cnvt in _cnvts:
         if frm in cnvt and to in cnvt:
-            if isinstance(cnvt[frm], list):
+            
+            #convert to SI units
+            if type(cnvt[frm]) is ListType:
                 bv = cnvt[frm][0](v)
             else:
                 bv = v * cnvt[frm]
-            if isinstance(cnvt[to], list):
-                return from_ndarray(itype, cnvt[to][1](bv))
+
+            #convert to chosen units
+            if type(cnvt[to]) is ListType:
+                fv = cnvt[to][1](bv)
             else:
-                return from_ndarray(itype, bv / cnvt[to])
+                fv = bv / cnvt[to]
+
+            return from_ndarray(itype, fv)
+
+    #no converter found
     raise ValueError('Could not convert between given units.')
