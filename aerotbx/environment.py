@@ -1,7 +1,7 @@
 import scipy as sp
 from scipy.interpolate import RectSphereBivariateSpline
 from pkg_resources import resource_string
-from aerotbx.utils import to_ndarray, from_ndarray
+from aerotbx.utils import to_ndarray, from_ndarray, from_ndarray2
 
 _EGM96 = None
 
@@ -41,7 +41,7 @@ def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
     """
 
     #convert the input value to array
-    t, h = to_ndarray(h)
+    vartype, h = to_ndarray(h)
 
     #check if given input is valud
     if not sp.isreal(h).all():
@@ -94,12 +94,7 @@ def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
             Tb = Tt
 
     #convert values back to original form
-    T = from_ndarray(t, T)
-    a = from_ndarray(t, sp.sqrt(1.4*R*T))
-    P = from_ndarray(t, P)
-    rho = from_ndarray(t, P/(R*T))
-    
-    return T, a, P, rho
+    return from_ndarray2(vartype, T, sp.sqrt(1.4*R*T), P, P/(R*T))
 
 def geoidheight(lat, lon):
     """
@@ -109,8 +104,8 @@ def geoidheight(lat, lon):
     global _EGM96
 
     #convert the input value to array
-    t, lat = to_ndarray(lat)
-    t, lon = to_ndarray(lon)
+    vartype, lat = to_ndarray(lat)
+    vartype, lon = to_ndarray(lon)
 
     if lat.shape != lon.shape:
         raise Exception("Inputs must contain equal number of values.")
@@ -133,4 +128,4 @@ def geoidheight(lat, lon):
     #evaluate the spline and reshape the result
     evl = _EGM96.ev(lats, lons).reshape(lat.shape)
 
-    return from_ndarray(t, evl)
+    return from_ndarray(vartype, evl)

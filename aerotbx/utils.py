@@ -15,3 +15,15 @@ def from_ndarray(itemtype, itemarray):
         return sp.matrix(itemarray, copy=False)
     else:
         return itemarray
+
+def from_ndarray2(itemtype, *items):
+    if itemtype in [IntType, LongType, FloatType]:
+        return [i.flat[0] for i in items]
+    elif itemtype is ListType:
+        return [i.tolist() for i in items]
+    elif itemtype is TupleType:
+        return [tuple(i.tolist()) for i in items]
+    elif itemtype is sp.matrix:
+        return [sp.matrix(i, copy=False) for i in items]
+    else:
+        return [i for i in items]

@@ -1,5 +1,5 @@
 import scipy as sp
-from aerotbx.utils import to_ndarray, from_ndarray
+from aerotbx.utils import to_ndarray, from_ndarray2
 
 _AETB_iternum = 10
 
@@ -18,7 +18,7 @@ def _flowinput(flow):
         raise Exception("Flow input variables must be real numbers.")
 
     #convert the input values to arrays
-    flowtype, flow = to_ndarray(flow)
+    vartype, flow = to_ndarray(flow)
     gamma = to_ndarray(gamma)[1]
 
     #check if the given gamma value is valid
@@ -34,7 +34,7 @@ def _flowinput(flow):
     if flow.size == 1: flow = sp.ones(n, sp.float64) * flow.flat[0]
     if gamma.size == 1: gamma = sp.ones(n, sp.float64) * gamma.flat[0]
 
-    return gamma, flow, mtype.lower(), flowtype
+    return gamma, flow, mtype.lower(), vartype
 
 def flowisentropic(**flow):
     """
@@ -48,7 +48,7 @@ def flowisentropic(**flow):
     """
 
     #parse the input
-    gamma, flow, mtype, flowtype = _flowinput(flow)
+    gamma, flow, mtype, vtype = _flowinput(flow)
 
     #calculate gamma-ratios for use in the equations
     a = (gamma+1) / 2
@@ -106,13 +106,7 @@ def flowisentropic(**flow):
     area[r] = a[r]**(-c[r]) * d[r]**c[r] / M[r]
     area[sp.logical_not(r)] = sp.inf
 
-    M = from_ndarray(flowtype, M)
-    T = from_ndarray(flowtype, T)
-    P = from_ndarray(flowtype, P)
-    rho = from_ndarray(flowtype, rho)
-    area = from_ndarray(flowtype, area)
-
-    return M, T, P, rho, area
+    return from_ndarray2(vtype, M, T, P, rho, area)
 
 def flownormalshock(**flow):
     """
@@ -120,7 +114,7 @@ def flownormalshock(**flow):
     """
 
     #parse the input
-    gamma, flow, mtype, flowtype = _flowinput(flow)
+    gamma, flow, mtype, vtype = _flowinput(flow)
 
     #calculate gamma-ratios for use in the equations
     a = (gamma+1) / 2
@@ -195,15 +189,7 @@ def flownormalshock(**flow):
     P0[M == sp.inf] = 0
     P1[M == sp.inf] = sp.inf    
 
-    M = from_ndarray(flowtype, M)
-    M2 = from_ndarray(flowtype, M2)
-    T = from_ndarray(flowtype, T)
-    P = from_ndarray(flowtype, P)
-    rho = from_ndarray(flowtype, rho)
-    P0 = from_ndarray(flowtype, P0)
-    P1 = from_ndarray(flowtype, P1)
-
-    return M, M2, T, P, rho, P0, P1
+    return from_ndarray2(vtype, M, M2, T, P, rho, P0, P1)
 
 def flowprandtlmeyer(**flow):
     """
@@ -211,7 +197,7 @@ def flowprandtlmeyer(**flow):
     """
 
     #parse the input
-    gamma, flow, mtype, flowtype = _flowinput(flow)
+    gamma, flow, mtype, vtype = _flowinput(flow)
 
     #calculate gamma-ratios for use in the equations
     l = sp.sqrt((gamma-1)/(gamma+1))
@@ -245,8 +231,4 @@ def flowprandtlmeyer(**flow):
     V = (1/l) * sp.arctan(l*b) - sp.arctan(b)
     U = sp.arcsin(1 / M)
 
-    M = from_ndarray(flowtype, M)
-    V = from_ndarray(flowtype, sp.rad2deg(V))
-    U = from_ndarray(flowtype, sp.rad2deg(U))
-        
-    return M, V, U
+    return from_ndarray2(vtype, M, sp.rad2deg(V), sp.rad2deg(U))
