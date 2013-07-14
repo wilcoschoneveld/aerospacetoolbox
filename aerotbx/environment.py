@@ -1,7 +1,7 @@
 import scipy as sp
 from scipy.interpolate import RectSphereBivariateSpline
 from pkg_resources import resource_string
-from aerotbx.utils import to_ndarray, from_ndarray, from_ndarray2
+from aerotbx.utils import to_ndarray, from_ndarray
 
 _EGM96 = None
 
@@ -41,7 +41,7 @@ def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
     """
 
     #convert the input value to array
-    vartype, h = to_ndarray(h)
+    itype, h = to_ndarray(h)
 
     #check if given input is valud
     if not sp.isreal(h).all():
@@ -93,8 +93,11 @@ def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
             Pb *= (Tt / Tb)**(-g/(Lr[i]*R))
             Tb = Tt
 
-    #convert values back to original form
-    return from_ndarray2(vartype, T, sp.sqrt(1.4*R*T), P, P/(R*T))
+    #calculate density and speed of sound
+    a = sp.sqrt(1.4*R*T)
+    rho = P / (R*T)
+
+    return from_ndarray(itype, T, a, P, rho)
 
 def geoidheight(lat, lon):
     """
@@ -104,8 +107,8 @@ def geoidheight(lat, lon):
     global _EGM96
 
     #convert the input value to array
-    vartype, lat = to_ndarray(lat)
-    vartype, lon = to_ndarray(lon)
+    itype, lat = to_ndarray(lat)
+    itype, lon = to_ndarray(lon)
 
     if lat.shape != lon.shape:
         raise Exception("Inputs must contain equal number of values.")
@@ -128,4 +131,4 @@ def geoidheight(lat, lon):
     #evaluate the spline and reshape the result
     evl = _EGM96.ev(lats, lons).reshape(lat.shape)
 
-    return from_ndarray(vartype, evl)
+    return from_ndarray(itype, evl)

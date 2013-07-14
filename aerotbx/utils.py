@@ -1,29 +1,20 @@
 import scipy as sp
 from types import ListType, IntType, LongType, FloatType, TupleType
 
+#convert any items to numpy arrays
 def to_ndarray(item):
     return type(item), sp.array(item, sp.float64, ndmin=1)
 
-def from_ndarray(itemtype, itemarray):
+#convert any numpy array back to original item type
+def from_ndarray(itemtype, *items):
     if itemtype in [IntType, LongType, FloatType]:
-        return itemarray.flat[0]
+        v = tuple(i.flat[0] for i in items)
     elif itemtype is ListType:
-        return itemarray.tolist()
+        v = tuple(i.tolist() for i in items)
     elif itemtype is TupleType:
-        return tuple(itemarray.tolist())
+        v = tuple(tuple(i.tolist()) for i in items)
     elif itemtype is sp.matrix:
-        return sp.matrix(itemarray, copy=False)
+        v = tuple(sp.matrix(i, copy=False) for i in items)
     else:
-        return itemarray
-
-def from_ndarray2(itemtype, *items):
-    if itemtype in [IntType, LongType, FloatType]:
-        return [i.flat[0] for i in items]
-    elif itemtype is ListType:
-        return [i.tolist() for i in items]
-    elif itemtype is TupleType:
-        return [tuple(i.tolist()) for i in items]
-    elif itemtype is sp.matrix:
-        return [sp.matrix(i, copy=False) for i in items]
-    else:
-        return [i for i in items]
+        v = tuple(i for i in items)
+    return v if len(items) > 1 else v[0]
