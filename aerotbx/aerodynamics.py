@@ -9,7 +9,7 @@ def _flowinput(flow):
 
     #check if single input is given
     if len(flow) != 1:
-        raise Exception("Function needs exactly one flow variable.")
+        raise Exception("Function needs exactly one flow input.")
 
     #pop the flow variable and type
     mtype, flow = flow.popitem()

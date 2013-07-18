@@ -3,6 +3,6 @@
 # Author: Wilco Schoneveld
 # Date: 7 July 2013
 
-from environment import atmosisa, geoidheight
+from environment import stdatmos, geoidheight
 from aerodynamics import flowisentropic, flownormalshock, flowprandtlmeyer
 from unitconversions import convert

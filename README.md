@@ -5,8 +5,8 @@ The Aerospace Toolbox for Python contains functions intended for aerospace engin
 
 
 *Environment* (accepts multidimensional arrays as input)
-- **atmosisa**: Evaluate the international standard atmosphere (ISA) at a given altitude. The function assumes a continued troposphere below 0 meters and an infinite mesosphere above 84 kilometers geopotential height.
-- **geoidheight**: Calculate the geoid height using the EGM96 Geopotential Model.
+- **stdatmos**: Evaluate any standard atmosphere (default=ISA) at a given geometrical, geopotential, absolute, pressure, temperature or density-altitude.
+- **geoidheight**: Calculate the geoid height at any coordinate using the EGM96 Geopotential Model.
 
 *Aerodynamics* (can convert multidimensional arrays from any property to another):
 - **flowisentropic**: Isentropic relations with a given set of specific heat ratios and any one of the isentropic flow variables.

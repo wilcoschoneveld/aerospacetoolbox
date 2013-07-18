@@ -23,81 +23,105 @@ def _loadEGM96():
 
     return lut
 
-def atmosisa(h, geopotential=True, T0=288.15, P0=101325.0):
-    """
-    Evaluate the international standard atmosphere (ISA) at a given altitude.
-    The function assumes a continued troposphere below 0 meters and an infinite
-    mesosphere above 84 kilometers geopotential height. atmosisa returns
-    a tuple of temperature T, speed of sound A, pressure P, and a density RHO.
+def stdatmos(**altitude):
+    model = altitude.pop("model", None)
 
-    call as:
-        [T, a, P, rho] = atmosisa(h, geopotential, T0, P0)
+    if len(altitude) is not 1:
+        raise Exception("Function needs exactly one altitude input.")
 
-    References
-    ----------
-    Definition of the Standard Atmosphere:
-        Anderson, John D. (2008). Introduction to Flight. (Sixth Edition
-        International). NY: McGraw-Hill.
-    """
+    mtype, alt = altitude.popitem()
 
-    #convert the input value to array
-    itype, h = to_ndarray(h)
+    if mtype not in ["geom", "geop", "abs", "T", "P", "rho"]:
+        raise Exception("The altitude input should be a valid input type.")
+    
+    itype, alt = to_ndarray(alt)
 
-    #check if given input is valud
-    if not sp.isreal(h).all():
-        raise Exception("Height input must be real numbers.")
+    R = 287.053 #gas constant [J/kg/K] (air)
+    gamma = 1.4 #specific heat ratio [-] (air)
+    
+    g = 9.80665 #standard gravity [m/s^2] (earth)
+    radius = 6356766.0 #earth radius [m] (earth)
+    
+    Tb = 288.15 #base temperature [K]
+    Pb = 101325.0 #base pressure [Pa]
 
-    #define constants
-    R = 287.053
-    g = 9.80665
-    Re = 6356766.0
+    Hb = [0, 11, 20, 32, 47, 51, 71, 84.852] #layer height [km]
+    Lr = [-6.5, 0, 1, 2.8, 0, -2.8, -2] #lapse rate [K/km]
 
-    #convert altitude to geopotential altitude if needed
-    if not geopotential:
-        h *= Re / (Re + h)
+    if model is not None:
+        raise Exception("Custom atmosphere model is incompatible.")
 
-    #define the international standard atmosphere
-    Hb = sp.array([0, 11, 20, 32, 47, 51, 71, 84.852], sp.float64) * 1000
-    Lr = sp.array([-6.5, 0, 1, 2.8, 0, -2.8, -2.0], sp.float64) * 0.001
+    Hb = sp.array(Hb, sp.float64) * 1000
+    Lr = sp.array(Lr, sp.float64) / 1000
 
-    #define base conditions
-    Tb = T0
-    Pb = P0
+    Tb *= sp.ones(Lr.size + 1, sp.float64)
+    Tb[1:] += sp.cumsum(Lr*(Hb[1:]-Hb[:-1]))
 
-    #create solution arrays
-    T = sp.ones(h.shape, sp.float64) * Tb
-    P = sp.ones(h.shape, sp.float64) * Pb
+    T = sp.ones(alt.shape, sp.float64) * sp.nan
+    P = sp.ones(alt.shape, sp.float64) * sp.nan
 
-    #loop through the layers of the international standard atmosphere
-    for i in xrange(7):
-        #grab a selection with altitudes above current layer
-        if i == 0: s = h > -sp.inf
-        else: s = h > Hb[i]
+    if mtype is "geom": h = alt * radius / (radius + alt)
+    elif mtype is "geop": h = alt
+    elif mtype is "abs": h = alt - radius
+    else: h = sp.ones(alt.shape, sp.float64) * sp.nan
+        
+    for i in xrange(len(Lr)):
+        if mtype is "T":
+            if not sp.isnan(h).any(): break
+            if Lr[i] == 0:
+                sel = (alt == Tb[i])
+            else:
+                s = sp.sign(Lr[i])
+                bot = -sp.inf if i is 0 else Tb[i]*s
+                top = sp.inf if i is len(Lr)-1 else Tb[i+1]*s
+                sel = sp.logical_and(alt*s >= bot, alt*s < top)
 
-        #if no altitudes are selected, stop looping
-        if not s.any(): break
+            sel = sp.logical_and(sel, sp.isnan(h))
 
-        #calculate the standard atmosphere from the hydrostatic equation
-        if Lr[i] == 0:
-            T[s] = Tb
-            P[s] = Pb * sp.exp((-g/(R*Tb))*(h[s]-Hb[i]))
+            T[sel] = alt[sel]
+            h[sel] = Hb[i] + (alt[sel] - Tb[i])/Lr[i]
+            
+            if Lr[i] == 0:
+                P[sel] = Pb * sp.exp((-g/(R*Tb[i]))*(h[sel]-Hb[i]))
+            else:
+                P[sel] = Pb * (T[sel] / Tb[i])**(-g/(Lr[i]*R))
+                
+        elif mtype in ["P", "rho"]:
+            vb = Pb if mtype is "P" else Pb/(R*Tb[i])
+            sel = alt <= (sp.inf if i is 0 else vb)
+            if not sel.any(): break
 
-            #update new layer base values
-            Pb *= sp.exp((-g/(R*Tb))*(Hb[i+1]-Hb[i]))
+            if Lr[i] == 0:
+                T[sel] = Tb[i]
+                h[sel] = Hb[i] - sp.log(alt[sel]/vb)*R*Tb[i]/g
+            else:
+                x = (Lr[i]*R + g) if mtype is "rho" else g
+                T[sel] = Tb[i] * (alt[sel]/vb)**(-Lr[i]*R/x)
+                h[sel] = Hb[i] + (T[sel] - Tb[i])/Lr[i]
+
+            P[sel] = alt[sel] if mtype is "P" else alt[sel]*R*T[sel]
+            
         else:
-            T[s] = Tb + Lr[i]*(h[s]-Hb[i])
-            P[s] = Pb * (T[s] / Tb)**(-g/(Lr[i]*R))
+            sel = h >= (-sp.inf if i is 0 else Hb[i])
+            if not sel.any(): break
 
-            #update new layer base values
-            Tt = Tb + Lr[i] * (Hb[i+1]-Hb[i])
-            Pb *= (Tt / Tb)**(-g/(Lr[i]*R))
-            Tb = Tt
+            if Lr[i] == 0:
+                T[sel] = Tb[i]
+                P[sel] = Pb * sp.exp((-g/(R*Tb[i]))*(h[sel]-Hb[i]))
+            else:
+                T[sel] = Tb[i] + Lr[i] * (h[sel]-Hb[i])
+                P[sel] = Pb * (T[sel] / Tb[i])**(-g/(Lr[i]*R))
 
-    #calculate density and speed of sound
-    a = sp.sqrt(1.4*R*T)
+        if Lr[i] == 0:
+            Pb *= sp.exp((-g/(R*Tb[i]))*(Hb[i+1] - Hb[i]))
+        else:
+            Pb *= (Tb[i+1] / Tb[i])**(-g/(Lr[i]*R))
+
+    h *= radius / (radius - h)
     rho = P / (R*T)
-
-    return from_ndarray(itype, T, a, P, rho)
+    a = sp.sqrt(gamma * R * T)
+    
+    return from_ndarray(itype, h, T, P, rho, a)
 
 def geoidheight(lat, lon):
     """
