@@ -1,8 +1,6 @@
-# __init__.py - initialization for aerospace toolbox
-#
-# Author: Wilco Schoneveld
-# Date: 7 July 2013
+"""Aerospace Toolbox / __init__.py"""
 
-from environment import stdatmos, geoidheight
-from aerodynamics import flowisentropic, flownormalshock, flowprandtlmeyer
-from unitconversions import convert
+from aerotbx.aerodynamics import flowisentropic, flownormalshock, \
+    flowprandtlmeyer
+from aerotbx.environment import stdatmos, geoidheight
+from aerotbx.unitconversions import convert

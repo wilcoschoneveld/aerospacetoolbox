@@ -1,3 +1,11 @@
+# pylint: disable=C0103,W0603,E0611,E1103
+""" Aerospace Toolbox / environment.py
+
+Analyse the environment with different standard atmosphere models and
+evaluation of the EGM96 geopotential model.
+
+"""
+
 import scipy as sp
 from scipy.interpolate import RectSphereBivariateSpline
 from pkg_resources import resource_string
@@ -7,27 +15,33 @@ from aerotbx.utils import to_ndarray, from_ndarray
 _EGM96 = None
 
 def _loadEGM96():
+    """load the EGM96 geoid model into a spline object"""
+    
     #load the data resource file into a string
-    flc = resource_string(__name__, 'data/egm96.dac')
+    flc = resource_string(__name__, "data/egm96.dac")
 
     #setup basic coordinates
     lon = sp.linspace(0, 2*sp.pi, 1440, False)
     lat = sp.linspace(0, sp.pi, 721)
 
     #parse the raw data string
-    data = sp.fromstring(flc, sp.dtype(sp.int16).newbyteorder('B'),
-                 1038240, '').reshape((lat.size, lon.size)) / 100.0
+    data = sp.fromstring(flc, sp.dtype(sp.int16).newbyteorder("B"),
+        1038240).reshape((lat.size, lon.size)) / 100.0
 
     #interpolate the bad boy
     lut = RectSphereBivariateSpline(lat[1: -1], lon, data[1: -1],
-               pole_values = (sp.mean(data[1]), sp.mean(data[-1])))
+        pole_values = (sp.mean(data[1]), sp.mean(data[-1])))
 
     return lut
 
 def stdmodel(**params):
+    """DOCSTRING NEEDED"""
+    
     return params
 
 def stdatmos(**altitude):
+    """DOCSTRING NEEDED"""
+    
     #pop atmospherical model from input
     model = altitude.pop("model", {})
 
@@ -50,31 +64,35 @@ def stdatmos(**altitude):
     itype, alt = to_ndarray(alt)
 
     #model values
-    R = model.get('R', 287.053) #gas constant [J/kg/K] (air)
-    gamma = model.get('gamma', 1.4) #specific heat ratio [-] (air)
+    R = model.get("R", 287.053) #gas constant [J/kg/K] (air)
+    gamma = model.get("gamma", 1.4) #specific heat ratio [-] (air)
 
-    g = model.get('g0', 9.80665) #gravity [m/s^2] (earth)
-    radius = model.get('radius', 6356766.0) #earth radius [m] (earth)
+    g = model.get("g0", 9.80665) #gravity [m/s^2] (earth)
+    radius = model.get("radius", 6356766.0) #earth radius [m] (earth)
 
-    Tb = model.get('T0', 288.15) #base temperature [K]
-    Pb = model.get('P0', 101325.0) #base pressure [Pa]
+    Tb = model.get("T0", 288.15) #base temperature [K]
+    Pb = model.get("P0", 101325.0) #base pressure [Pa]
+    
+    #model lapse rate and height layers
+    Hb = sp.array([0, 11, 20, 32, 47, 51, 71, sp.inf], sp.float64) * 1000
+    Lr = sp.array([-6.5, 0, 1, 2.8, 0, -2.8, -2], sp.float64) * 0.001
 
-    Hb = model.get('layers', [0, 11, 20, 32, 47, 51, 71, sp.inf]) #layer height [km]
-    Lr = model.get('lapserate', [-6.5, 0, 1, 2.8, 0, -2.8, -2]) #lapse rate [K/km]
-
-    #convert height and base layer to correct units
-    Hb = sp.array(Hb, sp.float64) * 1000
-    Lr = sp.array(Lr, sp.float64) / 1000
+    Hb = model.get("layers", Hb) #layer height [km]
+    Lr = model.get("lapserate", Lr) #lapse rate [K/km]
 
     #preshape solution arrays
     T = sp.ones(alt.shape, sp.float64) * sp.nan
     P = sp.ones(alt.shape, sp.float64) * sp.nan
 
     #define the height array
-    if mtype is "geom": h = alt * radius / (radius + alt)
-    elif mtype is "geop": h = alt
-    elif mtype is "abs": h = alt - radius
-    else: h = sp.ones(alt.shape, sp.float64) * sp.nan
+    if mtype is "geom":
+        h = alt * radius / (radius + alt)
+    elif mtype is "geop":
+        h = alt
+    elif mtype is "abs":
+        h = alt - radius
+    else:
+        h = sp.ones(alt.shape, sp.float64) * sp.nan
 
     for lr, hb, ht in zip(Lr, Hb[:-1], Hb[1:]):
         #calculate the temperature at layer top
@@ -82,7 +100,8 @@ def stdatmos(**altitude):
         
         if mtype is "T":
             #break the loop if there are no nans in the solution array
-            if not sp.isnan(h).any(): break
+            if not sp.isnan(h).any():
+                break
 
             #select all temperatures in current layer
             if lr == 0:
@@ -115,7 +134,8 @@ def stdatmos(**altitude):
             sel = alt <= (sp.inf if hb == 0 else vb)
 
             #break if nothing is selected
-            if not sel.any(): break
+            if not sel.any():
+                break
 
             #solve for temperature and height
             if lr == 0:
@@ -126,7 +146,7 @@ def stdatmos(**altitude):
                 T[sel] = Tb * (alt[sel]/vb)**(-lr*R/x)
                 h[sel] = hb + (T[sel] - Tb) / lr
 
-            #pressure is given as input (or as density, easy convert to pressure)
+            #pressure is given as input
             P[sel] = alt[sel] if mtype is "P" else alt[sel]*R*T[sel]
 
         else:
@@ -134,7 +154,8 @@ def stdatmos(**altitude):
             sel = h >= (-sp.inf if hb == 0 else hb)
 
             #break if nothing is selected
-            if not sel.any(): break
+            if not sel.any():
+                break
 
             #solve for temperature and pressure
             if lr == 0:
@@ -145,8 +166,10 @@ def stdatmos(**altitude):
                 P[sel] = Pb * (T[sel] / Tb)**(-g/(lr*R))
 
         #update pressure base value
-        if lr == 0: Pb *= sp.exp((-g/(R*Tb))*(ht - hb))
-        else: Pb *= (Tt / Tb)**(-g/(lr*R))
+        if lr == 0:
+            Pb *= sp.exp((-g/(R*Tb))*(ht - hb))
+        else:
+            Pb *= (Tt / Tb)**(-g/(lr*R))
 
         #update temperature base value
         Tb = Tt
@@ -163,9 +186,7 @@ def stdatmos(**altitude):
     return from_ndarray(itype, h, T, P, rho, a)
 
 def geoidheight(lat, lon):
-    """
-    Calculate the geoid height using the EGM96 Geopotential Model.
-    """
+    """Calculate geoid height using the EGM96 Geopotential Model."""
 
     global _EGM96
 
@@ -177,13 +198,16 @@ def geoidheight(lat, lon):
         raise Exception("Inputs must contain equal number of values.")
 
     if (lat < -90).any() or (lat > 90).any() or not sp.isreal(lat).all():
-        raise Exception("Lateral coordinates must be real numbers between -90 and 90 degrees.")
+        raise Exception("Lateral coordinates must be real numbers" \
+            " between -90 and 90 degrees.")
 
     if (lon < 0).any() or (lon > 360).any() or not sp.isreal(lon).all():
-        raise Exception("Longitudinal coordinates must be real numbers between 0 and 360 degrees.")
+        raise Exception("Longitudinal coordinates must be real numbers" \
+            " between 0 and 360 degrees.")
 
     #if the model is not loaded, do so
-    if _EGM96 is None: _EGM96 = _loadEGM96()
+    if _EGM96 is None:
+        _EGM96 = _loadEGM96()
 
     #shift lateral values to the right reference and flatten coordinates
     lats = sp.deg2rad(-lat + 90).ravel()

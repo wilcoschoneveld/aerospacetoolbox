@@ -1,17 +1,15 @@
+""" Aerospace Toolbox / unitconversions.py
+
+Convert different types of data structures from one unit to another.
+
+"""
+
 import scipy as sp
 from types import ListType
 from aerotbx.utils import to_ndarray, from_ndarray
 
-"""
-for linear relations:
-- float = unit to SI
-
-for non-linear relations:
-- list = [unit to SI, SI to unit]
-"""
-
 #acceleration
-_cacc = {'m/s^2': 1.0,
+C_ACC = {'m/s^2': 1.0,
          'g': 9.80665,
          'gal': 0.01,
          'km/s^2': 1000.0,
@@ -21,34 +19,34 @@ _cacc = {'m/s^2': 1.0,
          'mph/s': 5280 * 0.3048 / 3600}
          
 #angle
-_cang = {'rad': 1.0,
+C_ANGLE = {'rad': 1.0,
          'deg': sp.pi/180,
          'rev': 2*sp.pi}
 
 #angle velocity
-_canv = {'rad/s': 1.0,
+C_ANVEL = {'rad/s': 1.0,
          'deg/s': sp.pi/180,
          'rpm': 2*sp.pi/60}
 
 #angle acceleration
-_cana = {'rad/s^2': 1.0,
+C_ANACC = {'rad/s^2': 1.0,
          'deg/s^2': sp.pi/180,
          'rpm/s': 2*sp.pi/60}
 
 #density
-_cden = {'kg/m^3': 1.0,
+C_DENS = {'kg/m^3': 1.0,
          'lbm/ft^3': 0.45359237 / 0.3048**3,
          'lbm/in^3': 0.45359237 / 0.0254**3,
          'slug/ft^3': 0.45359237 * 9.80665 / 0.3048**4}
 
 #force
-_cfor = {'N': 1.0,
+C_FORCE = {'N': 1.0,
          'kgf': 9.80665,
          'lbf': 0.45359237 * 9.80665,
          'dyne': 0.001 * 0.01}
 
 #length
-_clen = {'m': 1.0,
+C_LEN = {'m': 1.0,
          'km': 1000.0,
          'mi': 5280 * 0.3048,
          'nmi': 1852.0,
@@ -58,20 +56,20 @@ _clen = {'m': 1.0,
          'pt': 0.0254 / 72}
 
 #mass
-_cmas = {'kg': 1.0,
+C_MASS = {'kg': 1.0,
          'ton': 1000.0,
          'lbm': 0.45359237,
          'slug': 0.45359237 * 9.80665 / 0.3048}
 
 #pressure
-_cpre = {'Pa': 1.0,
+C_PRESS = {'Pa': 1.0,
          'atm': 101325.0,
          'bar': 100000.0,
          'psi': 0.45359237 * 9.80665 / 0.0254**2,
          'psf': 0.45359237 * 9.80665 / 0.3048**2}
 
 #temperature
-_ctem = {'K': 1.0,
+C_TEMP = {'K': 1.0,
          'R': 5 / 9.0,
          'C': [lambda x: x + 273.15,
                lambda x: x - 273.15],
@@ -81,7 +79,7 @@ _ctem = {'K': 1.0,
                lambda x: (x - 273.15) * 33. / 100]}
 
 #velocity
-_cvel = {'m/s': 1.0,
+C_VELO = {'m/s': 1.0,
          'ft/s': 0.3048,
          'km/s': 1000.0,
          'in/s': 0.0254,
@@ -91,37 +89,36 @@ _cvel = {'m/s': 1.0,
          'ft/min': 0.3048 / 60}
 
 #energy
-_cene = {'J': 1.0,
+C_ENERGY = {'J': 1.0,
          'kwh': 1000.0 * 3600,
          'cal': 4.184,
          'ftlb': 0.3048 * 0.45359237 * 9.80665}
 
-_cnvts = [_cacc, _cang, _canv, _cana, _cden, _cfor,
-          _clen, _cmas, _cpre, _ctem, _cvel, _cene]
+CNVTS = [C_ACC, C_ANGLE, C_ANVEL, C_ANACC, C_DENS, C_FORCE,
+          C_LEN, C_MASS, C_PRESS, C_TEMP, C_VELO, C_ENERGY]
 
-def convert(value, frm, to):
-    """convert input from one unit (frm) to another (to)
-    """
+def convert(value, unit_from, unit_to):
+    """convert value from one unit to another"""
 
-    itype, v = to_ndarray(value)
+    itype, value = to_ndarray(value)
 
     #loop through all converters and search for pairs
-    for cnvt in _cnvts:
-        if frm in cnvt and to in cnvt:
+    for cnvt in CNVTS:
+        if unit_from in cnvt and unit_to in cnvt:
             
-            #convert to SI units
-            if type(cnvt[frm]) is ListType:
-                bv = cnvt[frm][0](v)
+            #convert to SI unit
+            if type(cnvt[unit_from]) is ListType:
+                value_si = cnvt[unit_from][0](value)
             else:
-                bv = v * cnvt[frm]
+                value_si = value * cnvt[unit_from]
 
-            #convert to chosen units
-            if type(cnvt[to]) is ListType:
-                fv = cnvt[to][1](bv)
+            #convert to target unit
+            if type(cnvt[unit_to]) is ListType:
+                value = cnvt[unit_to][1](value_si)
             else:
-                fv = bv / cnvt[to]
+                value = value_si / cnvt[unit_to]
 
-            return from_ndarray(itype, fv)
+            return from_ndarray(itype, value)
 
     #no converter found
     raise ValueError('Could not convert between given units.')
