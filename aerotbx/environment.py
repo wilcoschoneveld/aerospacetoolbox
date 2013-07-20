@@ -1,6 +1,7 @@
 import scipy as sp
 from scipy.interpolate import RectSphereBivariateSpline
 from pkg_resources import resource_string
+from types import DictType
 from aerotbx.utils import to_ndarray, from_ndarray
 
 _EGM96 = None
@@ -23,9 +24,16 @@ def _loadEGM96():
 
     return lut
 
+def stdmodel(**params):
+    return params
+
 def stdatmos(**altitude):
     #pop atmospherical model from input
-    model = altitude.pop("model", None)
+    model = altitude.pop("model", {})
+
+    #check if model is a dictionary
+    if type(model) is not DictType:
+        raise Exception("Custom atmosphere model is incompatible.")
 
     #check if a single remaining input exists
     if len(altitude) is not 1:
@@ -41,22 +49,18 @@ def stdatmos(**altitude):
     #convert the input to numpy arrays
     itype, alt = to_ndarray(alt)
 
-    #define default atmospheric values
-    R = 287.053 #gas constant [J/kg/K] (air)
-    gamma = 1.4 #specific heat ratio [-] (air)
-    
-    g = 9.80665 #standard gravity [m/s^2] (earth)
-    radius = 6356766.0 #earth radius [m] (earth)
-    
-    Tb = 288.15 #base temperature [K]
-    Pb = 101325.0 #base pressure [Pa]
+    #model values
+    R = model.get('R', 287.053) #gas constant [J/kg/K] (air)
+    gamma = model.get('gamma', 1.4) #specific heat ratio [-] (air)
 
-    Hb = [0, 11, 20, 32, 47, 51, 71, 84.852] #layer height [km]
-    Lr = [-6.5, 0, 1, 2.8, 0, -2.8, -2] #lapse rate [K/km]
+    g = model.get('g0', 9.80665) #gravity [m/s^2] (earth)
+    radius = model.get('radius', 6356766.0) #earth radius [m] (earth)
 
-    #TODO: add custom model compatibility (overwrite default values)
-    if model is not None:
-        raise Exception("Custom atmosphere model is incompatible.")
+    Tb = model.get('T0', 288.15) #base temperature [K]
+    Pb = model.get('P0', 101325.0) #base pressure [Pa]
+
+    Hb = model.get('layers', [0, 11, 20, 32, 47, 51, 71, sp.inf]) #layer height [km]
+    Lr = model.get('lapserate', [-6.5, 0, 1, 2.8, 0, -2.8, -2]) #lapse rate [K/km]
 
     #convert height and base layer to correct units
     Hb = sp.array(Hb, sp.float64) * 1000
