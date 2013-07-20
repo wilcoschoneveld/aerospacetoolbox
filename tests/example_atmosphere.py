@@ -3,32 +3,48 @@ import matplotlib.pyplot as plt
 from aerotbx import stdatmos
 
 #create a linearly spaced height array
-h = sp.linspace(-1000, 80000, 1000)
+h = sp.linspace(-2, 82, 1000)
 
 #use stdatmos to evaluate the standard atmosphere
-h, T, P, rho, a = stdatmos(geom=h)
+_, T, P, rho, _ = stdatmos(geom=h*1000)
 
-#create a logspaced pressure array (to simulate pressure measurements)
-pstatic = sp.logspace(1, 4, 30)
+#use stdatmos to evaluate temperature altitude
+Tt = sp.array([280, 250, 220, 200])
+Th = stdatmos(T=Tt)[0] * 0.001
 
-#use stdatmos to obtain geometrical height from pressures
-h2 = stdatmos(P=pstatic)[0]
+#use stdatmos to evaluate pressure altitude
+Pp = sp.logspace(1, 4, 30)
+Ph = stdatmos(P=Pp)[0] * 0.001
 
-#plot the temperature gradient
-plt.figure()
-plt.plot(T, h)
-plt.title('temperature')
+#use stdatmos to evaluate density altitude
+rr = sp.logspace(-1, -4, 20)
+rh = stdatmos(rho=rr)[0] * 0.001
 
-#plot the pressure curve and simulated measurements
-plt.figure()
-plt.semilogx(P, h)
-plt.plot(pstatic, h2, '+')
-plt.title('pressure')
+#create a new plot
+plt.figure(figsize=(13, 6))
+plt.suptitle('International Standard Atmosphere')
 
-#plot the density curve
-plt.figure()
-plt.semilogx(rho, h)
-plt.title('density')
+#Temperature
+plt.subplot(131)
+plt.plot(T, h, 'r')
+plt.plot(Tt, Th, 'kv')
+plt.xlabel('Temperature [$K$]')
+plt.ylabel('Height (km)')
+plt.ylim(h[0], h[-1])
+
+#Pressure
+plt.subplot(132)
+plt.semilogx(P, h, 'g')
+plt.plot(Pp, Ph, 'k+')
+plt.xlabel('Pressure [$Pa$]')
+plt.ylim(h[0], h[-1])
+
+#Density
+plt.subplot(133)
+plt.semilogx(rho, h, 'b')
+plt.plot(rr, rh, 'k+')
+plt.xlabel(r'Density [$N/m^2$]')
+plt.ylim(h[0], h[-1])
 
 plt.show()
 
