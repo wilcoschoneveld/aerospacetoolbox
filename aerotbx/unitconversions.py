@@ -98,7 +98,39 @@ CNVTS = [C_ACC, C_ANGLE, C_ANVEL, C_ANACC, C_DENS, C_FORCE,
           C_LEN, C_MASS, C_PRESS, C_TEMP, C_VELO, C_ENERGY]
 
 def convert(value, unit_from, unit_to):
-    """convert value from one unit to another"""
+    """
+    Convert values from one unit to another.
+    
+    This function accepts conversion with units of length, velocity,
+    acceleration, angles, angle velocity, angle accelerations,
+    density, pressure, absolute temperature, mass, force and energy.
+
+    Parameters
+    ----------
+    value : array_like
+        Input values in original unit.
+    unit_from : str
+        Original unit as a string.
+    unit_to : str
+        Target unit as a string.
+
+    Returns
+    -------
+    value : array_like
+        Input values converted into target unit.
+        
+    Notes
+    -----
+    Use the source file as reference for accepted unit strings. Additional
+    units and physical quantities can easily be added to this function.
+
+    Examples
+    --------
+    >>> convert(23, 'C', 'K')
+    296.14999999999998
+    >>> convert(sp.linspace(0, 30, num=5), 'm', 'ft')
+    array([0, 24.60629921, 49.21259843, 73.81889764, 98.42519685])
+    """
 
     itype, value = to_ndarray(value)
 

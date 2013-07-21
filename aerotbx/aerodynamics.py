@@ -328,10 +328,10 @@ def flowprandtlmeyer(**flow):
     M : array_like
         Mach number. Values must be greater than or equal to 1.
     nu : array_like
-        Prandtl-Meyer angle. Values must be
+        Prandtl-Meyer angle [degrees]. Values must be
         0 <= M <= 90*(sqrt((g+1)/(g-1))-1).
     mu : array_like
-        Mach angle. Values must be 0 <= M <= 90.
+        Mach angle [degrees]. Values must be 0 <= M <= 90.
     
     Returns
     -------

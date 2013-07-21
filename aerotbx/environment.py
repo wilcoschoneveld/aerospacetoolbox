@@ -35,12 +35,95 @@ def _loadEGM96():
     return lut
 
 def stdmodel(**params):
-    """DOCSTRING NEEDED"""
+    """
+    Define a model for use in evaluating the standard atmosphere.
+    
+    The user can define as many parameters as needed, all other values
+    are default as defined in the International Standard Atmosphere.
+    
+    Parameters
+    ----------
+    R : float
+        Specific gas constant [J/kg/K].
+    gamma : float
+        Specific heat ratio.
+    radius : float
+        Radius of planet [m].
+    g0 : float
+        Standard gravity at zero altitude [m/s^2].
+    T0 : float
+        Temperature at zero altitude [K].
+    P0 : float
+        Pressure at zero altitude [K].
+    lapserate : array_like
+        Rate of temperature change with height [K/m]. The lapse rate should
+        be defined in line with geopotential altitude.
+    layers : array_like
+        Height layers accompanying the lapse rate input [m]. Should be
+        defined as geopotential altitude and contain atleast one more
+        value as the given lapse rate to account for layer base and top
+        values.
+    
+    Returns
+    -------
+    model : dict
+        Dictionary containing all given values
+    """
     
     return params
 
 def stdatmos(**altitude):
-    """DOCSTRING NEEDED"""
+    """
+    Evaluate the standard atmosphere at any given altitude.
+    
+    This function allows input of a single variable to calculate
+    the atmospheric properties at different altitudes. The function
+    can work with different types of standard models. The default model
+    values are set as defined by the International Standard Atmosphere.
+    
+    Parameters
+    ----------
+    model : dict, optional
+        A standard atmosphere model as obtained from stdmodel. Partial
+        models are allowed. The remaining model values default to
+        the International Standard Atmosphere.
+    h or geom : array_like
+        Geometrical altitude [meters].
+    geop : array_like
+        Geopotential altitude [meters].
+    abs : array_like
+        Absolute altitude [meters].
+    T : array_like
+        Temperature altitude [K].
+    P : array_like
+        Pressure altitude [Pa].
+    rho : array_like
+        Density altitude [kg/m^3].
+        
+    Returns
+    -------
+    out : (h, T, P, rho, a)
+        Tuple of geometrical altitude, temperature, pressure, density
+        and speed of sound at given altitudes.
+    
+    Notes
+    -----
+    This function assumes a continues lapserate below 0 altitude and above
+    the top layer, which allows for extrapolation outside the specified
+    region (0 to 86km in ISA). Temperature altitude is obtained as the
+    first altitude from 0 where the specified temperature exists.
+        
+    See Also
+    --------
+    stdmodel
+    
+    Examples
+    --------
+    >>> stdatmos(P=[1e5, 1e4, 1e3])[0]
+    [110.8864127251899, 16221.007939493587, 31207.084373790043]
+    >>> stdatmos(h=sp.linspace(-2000, 81000))
+    (array, array, array, array, array)
+    """
     
     #pop atmospherical model from input
     model = altitude.pop("model", {})
@@ -57,7 +140,7 @@ def stdatmos(**altitude):
     mtype, alt = altitude.popitem()
 
     #check if the altitude input type is valid
-    if mtype not in ["geom", "geop", "abs", "T", "P", "rho"]:
+    if mtype not in ["h", "geom", "geop", "abs", "T", "P", "rho"]:
         raise Exception("The altitude input should be a valid input type.")
 
     #convert the input to numpy arrays
@@ -85,7 +168,7 @@ def stdatmos(**altitude):
     P = sp.ones(alt.shape, sp.float64) * sp.nan
 
     #define the height array
-    if mtype is "geom":
+    if mtype in ["h", "geom"]:
         h = alt * radius / (radius + alt)
     elif mtype is "geop":
         h = alt
@@ -186,7 +269,28 @@ def stdatmos(**altitude):
     return from_ndarray(itype, h, T, P, rho, a)
 
 def geoidheight(lat, lon):
-    """Calculate geoid height using the EGM96 Geopotential Model."""
+    """
+    Calculate geoid height using the EGM96 Geopotential Model.
+
+    Parameters
+    ----------
+    lat : array_like
+        Lateral coordinates [degrees]. Values must be -90 <= lat <= 90.
+    lon : array_like
+        Longitudinal coordinates [degrees]. Values must be 0 <= lon <= 360.
+
+    Returns
+    -------
+    out : array_like
+        Geoidheight [meters]
+
+    Examples
+    --------
+    >>> geoidheight(30, 20)
+    25.829999999999995
+    >>> geoidheight([30, 20],[40, 20])
+    [9.800000000000002, 14.43]
+    """
 
     global _EGM96
 
