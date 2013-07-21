@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Aerospace Toolbox : A collection of functions for aerospace analysis." />
+    <meta name="description" content="Aerospace Toolbox : A collection of functions for Python 2.7" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/wilcoschoneveld/aerospacetoolbox">View on GitHub</a>
 
           <h1 id="project_title">Aerospace Toolbox</h1>
-          <h2 id="project_tagline">A collection of functions for aerospace analysis.</h2>
+          <h2 id="project_tagline">A collection of functions for Python 2.7</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/wilcoschoneveld/aerospacetoolbox/zipball/master">Download this project as a .zip file</a>
@@ -31,32 +31,30 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p>The Aerospace Toolbox for Python contains functions intended for aerospace engineering analysis to develop and evaluate designs. The toolbox is developed (and currently only tested) in a Python 2.7.5 environment and requires Numpy/Scipy. The toolbox is designed to allow quick and robust evaluation of functions and to properly accept and handle multidimensional matrices/array's. Currently, the toolbox contains the following:</p>
+        <p>The Aerospace Toolbox for Python contains a collection of functions intended for aerospace engineering applications. The Toolbox is developed (and currently only tested) in a Python 2.7 environment and requires a recent distribution of NumPy and SciPy. The Toolbox is designed to allow quick and robust evaluation of different functions and to properly accept and handle array-like data structures.</p>
 
-<p><em>Environment</em> (accepts multidimensional arrays as input)</p>
-
-<ul>
-<li>
-<strong>stdmodel</strong>: Define a standard atmosphere model with custom parameters such as gravity and lapserate.</li>
-<li>
-<strong>stdatmos</strong>: Evaluate any standard atmosphere (default=ISA) at a given geometrical, geopotential, absolute, pressure, temperature or density-altitude.</li>
-<li>
-<strong>geoidheight</strong>: Calculate the geoid height at any coordinate using the EGM96 Geopotential Model.</li>
-</ul><p><em>Aerodynamics</em> (can convert multidimensional arrays from any property to another):</p>
+<h3>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h3>
 
 <ul>
-<li>
-<strong>flowisentropic</strong>: Isentropic relations with a given set of specific heat ratios and any one of the isentropic flow variables.</li>
-<li>
-<strong>flownormalshock</strong>: Normal shock relations with a given set of specific heat ratios and any one of the normal shock variables.</li>
-<li>
-<strong>flowprandtlmeyer</strong>: Prandtl-Meyer function for expansion waves.</li>
-</ul><p><em>Unit Conversion</em> (can convert multidimensional arrays from any unit to another):</p>
+<li>All functions accept input data in any form that can be converted to an array. This includes scalars, lists, tuples, matrices and ndarrays. Each functions returns it's results in original form.</li>
+<li>The theoretical formulas are evaluated by either direct substition or iteration with the Newton-Raphson method if the former is not possible.</li>
+<li>Includes a module which wraps most of the functions in <a href="http://www.mathworks.nl/help/aerotbx/index.html">MATLAB Aerospace Toolbox</a> syntax.</li>
+</ul><h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
 
-<ul>
-<li>
-<strong>convert</strong>: easy conversion of units, such as mass, pressure and density.</li>
-</ul><p>The Aerospace Toolbox for Python is created to (partially) look like the equivalent set of functions in the matlab aerospace toolbox: <a href="http://www.mathworks.nl/help/aerotbx/index.html">http://www.mathworks.nl/help/aerotbx/index.html</a></p>
+<p>The easiest way to obtain the most recent version of the Aerospace Toolbox is by downloading the source as a <a href="https://github.com/wilcoschoneveld/aerospacetoolbox/zipball/master">ZIP-file</a>. Extract the contents to a folder and install the package by running the following command:</p>
+
+<pre><code>python setup.py install
+</code></pre>
+
+<p>A Python 2.7 distribution with <a href="http://www.numpy.org/">NumPy</a> and <a href="http://www.scipy.org/">SciPy</a> is needed in order to make proper use of the Aerospace Toolbox. A recent version of <a href="http://matplotlib.org/">matplotlib</a> is required to run the example scripts.</p>
+
+<h3>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h3>
+
+<h3>
+<a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h3>
       </section>
     </div>
 
