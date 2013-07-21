@@ -54,13 +54,53 @@ def _flowinput(flow):
 
 def flowisentropic(**flow):
     """
-    Evaluate the isentropic relations with a given set of specific heat
-    ratios and any one of the isentropic flow variables. flowisentropic
-    returns a tuple of isentropic flow Mach number M, temperature ratio T,
-    pressure ratio P, density ratio RHO, and area ratio AREA.
+    Evaluate the isentropic relations with any flow variable.
+    
+    This function accepts a given set of specific heat ratios and
+    a single input of isentropic flow variables. Inputs can be a single
+    scalar or an array_like data structure.
 
-    call as:
-        M, T, P, rho, area = flowisentropic(**flow)
+    Parameters
+    ----------
+    gamma : array_like, optional
+        Specific heat ratio. Values must be greater than 1.
+    M : array_like
+        Mach number. Values must be greater than or equal to 0.
+    T : array_like
+        Temperature ratio T/T0. Values must be 0 <= T <= 1. 
+    P : array_like
+        Pressure ratio P/P0. Values must be 0 <= P <= 1.
+    rho : array_like
+        Density ratio rho/rho0. Values must be 0 <= rho <= 1.
+    sub : array_like
+        Subsonic area ratio A/A*. Values must be greater than or equal
+        to 1.
+    sup : array_like
+        Supersonic area ratio A/A*. Values must be greater than or
+        equal to 1.
+    
+    Returns
+    -------
+    out : (M, T, P, rho, area)
+        Tuple of Mach number, temperature ratio, pressure ratio, density
+        ratio and area ratio.
+        
+    Notes
+    -----
+    This function accepts one and only one of the isentropic flow
+    variables. It will raise an Exception when more than one input
+    is given.
+    
+    Examples
+    --------
+    >>> flowisentropic(M=3)
+    (3.0, 0.35714285714285715, 0.027223683703862824, 0.076226314370815895,
+    4.2345679012345689)
+    >>> flowisentropic(gamma=1.4, sup=1.6)
+    (1.9352576078182122, 0.57174077399894296, 0.14131786852470815,
+    0.24717122680666009, 1.6000000000000001)
+    >>> flowisentropic(T=sp.linspace(0, 1, 100))
+    (array, array, array, array, array)
     """
 
     #parse the input
@@ -130,7 +170,59 @@ def flowisentropic(**flow):
     return from_ndarray(itype, M, T, P, rho, area)
 
 def flownormalshock(**flow):
-    """Normal shock relations"""
+    """
+    Evaluate the normal shock wave relations with any flow variable.
+    
+    This function accepts a given set of specific heat ratios and a
+    single input of normal shock wave flow variables. Inputs can be
+    a scalar or an array_like data structure.
+
+    Parameters
+    ----------
+    gamma : array_like, optional
+        Specific heat ratio. Values must be greater than 1.
+    M : array_like
+        Upstream Mach number. Values must be greater than or equal to 1.
+    M2 : array_like
+        Downstream Mach number. Values must be
+        SQRT((GAMMA-1)/(2*GAMMA)) <= M <= 1.
+    T : array_like
+        Temperature ratio T2/T1. Values must be greater than or equal to 1.
+    P : array_like
+        Pressure ratio P2/P1. Values must be greater than or equal to 1.
+    rho : array_like
+        Density ratio rho2/rho1. Values must be
+        1 <= rho <= (GAMMA+1)/(GAMMA-1).
+    P0 : array_like
+        Total pressure ratio P02/P01. Values must be 0 <= P0 <= 1.
+    Pitot : array_like
+        Rayleigh-Pitot ratio P02/P1. Values must be greater than or equal
+        to ((GAMMA+1)/2)**(-GAMMA/(GAMMA+1)).
+    
+    Returns
+    -------
+    out :  (M, M2, T, P, rho, P0, Pitot)
+        Tuple of upstream Mach number, downstream Mach number, temperature
+        ratio, pressure ratio, density ratio, total pressure ratio,
+        rayleigh-pitot ratio.
+        
+    Notes
+    -----
+    This function accepts one and only one of the normal shock flow
+    variables. It will raise an Exception when more than one input
+    is given.
+    
+    Examples
+    --------
+    >>> flownormalshock(M=2)
+    (2.0, 0.57735026918962573, 1.6874999999999998, 4.5, 2.666666666666667,
+    0.72087386148474542, 5.640440812823317)
+    >>> flownormalshock(gamma=1.4, Pitot=3.4)
+    (1.4964833298836788, 0.70233741753226209, 1.3178766042516246,
+    2.4460394160563674, 1.8560458605647578, 0.93089743233402389, 3.3999999999999977)
+    >>> flownormalshock(M2=[0.5, 0.6, 0.7])
+    (list, list, list, list, list, list, list)
+    """
 
     #parse the input
     gamma, flow, mtype, itype = _flowinput(flow)
@@ -165,7 +257,7 @@ def flownormalshock(**flow):
         upperbound = (gamma+1) / (gamma-1)
         if (flow < 1).any() or (flow > upperbound).any():
             raise Exception("Density ratio inputs must be real numbers" \
-                " 1 <= M <= (GAMMA+1)/(GAMMA-1).")
+                " 1 <= rho <= (GAMMA+1)/(GAMMA-1).")
         M[flow >= upperbound] = sp.inf
         M[flow < upperbound] = sp.sqrt(2*flow / (1 + gamma + flow - flow*gamma))
     elif mtype in ["temp", "t"]:
@@ -188,7 +280,7 @@ def flownormalshock(**flow):
                 + b*M**4 + M**2)) / (b*M**2 + 1)**2
             M = M - (f / g) #Newton-Raphson
         M[flow == 0] = sp.inf
-    elif mtype in ["pito", "pitot", "rpr"]:
+    elif mtype in ["pito", "pitot", "rp"]:
         lowerbound = a**c
         if (flow < lowerbound).any():
             raise Exception("Rayleigh-Pitot ratio inputs must be real" \
@@ -222,7 +314,35 @@ def flownormalshock(**flow):
     return from_ndarray(itype, M, M2, T, P, rho, P0, P1)
 
 def flowprandtlmeyer(**flow):
-    """Prandtl-Meyer function for expansion waves"""
+    """
+    Prandtl-Meyer function for expansion waves.
+    
+    This function accepts a given set of specific heat ratios and
+    an input of either Mach number, Mach angle or Prandtl-Meyer angle.
+    Inputs can be a single scalar or an array_like data structure.
+
+    Parameters
+    ----------
+    gamma : array_like, optional
+        Specific heat ratio. Values must be greater than 1.
+    M : array_like
+        Mach number. Values must be greater than or equal to 1.
+    nu : array_like
+        Prandtl-Meyer angle. Values must be
+        0 <= M <= 90*(sqrt((g+1)/(g-1))-1).
+    mu : array_like
+        Mach angle. Values must be 0 <= M <= 90.
+    
+    Returns
+    -------
+    out : (M, nu, mu)
+        Tuple of Mach number, Prandtl-Meyer angle, Mach angle.
+    
+    Examples
+    --------
+    >>> flowprandtlmeyer(M=5)
+    (5.0, 76.920215508538789, 11.536959032815489)
+    """
 
     #parse the input
     gamma, flow, mtype, itype = _flowinput(flow)
