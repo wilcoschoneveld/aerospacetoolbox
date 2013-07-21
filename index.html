@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Aerospace Toolbox by wilcoschoneveld</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Aerospace Toolbox</h1>
+        <p>A collection of functions for aerospace analysis.</p>
+
+        <p class="view"><a href="https://github.com/wilcoschoneveld/aerospacetoolbox">View the Project on GitHub <small>wilcoschoneveld/aerospacetoolbox</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/wilcoschoneveld/aerospacetoolbox/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/wilcoschoneveld/aerospacetoolbox/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/wilcoschoneveld/aerospacetoolbox">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>The Aerospace Toolbox for Python contains functions intended for aerospace engineering analysis to develop and evaluate designs. The toolbox is developed (and currently only tested) in a Python 2.7.5 environment and requires Numpy/Scipy. The toolbox is designed to allow quick and robust evaluation of functions and to properly accept and handle multidimensional matrices/array's. Currently, the toolbox contains the following:</p>
+
+<p><em>Environment</em> (accepts multidimensional arrays as input)</p>
+
+<ul>
+<li>
+<strong>stdmodel</strong>: Define a standard atmosphere model with custom parameters such as gravity and lapserate.</li>
+<li>
+<strong>stdatmos</strong>: Evaluate any standard atmosphere (default=ISA) at a given geometrical, geopotential, absolute, pressure, temperature or density-altitude.</li>
+<li>
+<strong>geoidheight</strong>: Calculate the geoid height at any coordinate using the EGM96 Geopotential Model.</li>
+</ul><p><em>Aerodynamics</em> (can convert multidimensional arrays from any property to another):</p>
+
+<ul>
+<li>
+<strong>flowisentropic</strong>: Isentropic relations with a given set of specific heat ratios and any one of the isentropic flow variables.</li>
+<li>
+<strong>flownormalshock</strong>: Normal shock relations with a given set of specific heat ratios and any one of the normal shock variables.</li>
+<li>
+<strong>flowprandtlmeyer</strong>: Prandtl-Meyer function for expansion waves.</li>
+</ul><p><em>Unit Conversion</em> (can convert multidimensional arrays from any unit to another):</p>
+
+<ul>
+<li>
+<strong>convert</strong>: easy conversion of units, such as mass, pressure and density.</li>
+</ul><p>The Aerospace Toolbox for Python is created to (partially) look like the equivalent set of functions in the matlab aerospace toolbox: <a href="http://www.mathworks.nl/help/aerotbx/index.html">http://www.mathworks.nl/help/aerotbx/index.html</a></p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/wilcoschoneveld">wilcoschoneveld</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
