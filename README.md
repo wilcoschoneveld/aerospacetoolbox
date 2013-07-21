@@ -5,6 +5,7 @@ The Aerospace Toolbox for Python contains functions intended for aerospace engin
 
 
 *Environment* (accepts multidimensional arrays as input)
+- **stdmodel**: Define a standard atmosphere model with custom parameters such as gravity and lapserate.
 - **stdatmos**: Evaluate any standard atmosphere (default=ISA) at a given geometrical, geopotential, absolute, pressure, temperature or density-altitude.
 - **geoidheight**: Calculate the geoid height at any coordinate using the EGM96 Geopotential Model.
 
