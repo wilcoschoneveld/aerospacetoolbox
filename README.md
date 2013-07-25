@@ -37,4 +37,47 @@ from aerotbx.matlab import *
 
 ### Examples
 
-*to be added*
+You can easily convert values from one unit to another by using the *convert* function. The function accepts an array_like data structure as input, followed by two strings representing the input unit and target unit.
+
+````python
+>>> convert(30, 'cm', 'ft') #30 centimeters to feet
+0.98425196850393692
+>>> convert([0, 15, 30], 'C', 'K') #degrees celcius to kelvin
+[273.15, 288.15, 303.15]
+````
+
+The function *flownormalshock* returns a tuple of flow values from normal shockwave theory. You can input one of the flow values as array_like data and the function will calculate the rest:
+
+````python
+>>> flowvalues = flownormalshock(M=3) #upstream Mach number = 3
+>>> flowvalues[1] #downstream Mach number
+0.47519096331149141
+>>> flowvalues = flownormalshock(Pitot=3) #Rayleight-Pitot
+>>> flowvalues[0] #upstream Mach number
+1.3858511209068562
+````
+
+The International Standard Atmosphere (ISA) can be evaluated with the *stdatmos* function. The following example uses [matplotlib](http://matplotlib.org/) to plot the temperature gradient from 0 to 80 kilometers geometrical altitude.
+
+````python
+>>> from pylab import *
+>>> h_array = linspace(0, 80000)
+>>> h, T, P, rho, a = stdatmos(h=h_array)
+>>> plot(T, h)
+>>> xlabel("Temperature [K]")
+>>> ylabel("Height [M]")
+>>> show()
+````
+
+Another way of using the *stdatmos* function is to find the altitude at which a certain temperature, pressure or density occurs. The pressure altitude of 26 kPa can be found as follows:
+
+````python
+>>> stdatmos(P=26000)[0] #should be about 10km
+10124.61855654098
+````
+
+For more information on all available functions and usages, refer to the source code on github. You can also use the python *help* function to display the docstring provided with each function:
+
+````python
+>>> help(geoidheight)
+````
