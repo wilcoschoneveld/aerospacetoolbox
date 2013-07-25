@@ -68,7 +68,45 @@
 <h3>
 <a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h3>
 
-<p><em>to be added</em></p>
+<p>You can easily convert values from one unit to another by using the <em>convert</em> function. The function accepts an array_like data structure as input, followed by two strings representing the input unit and target unit.</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">convert</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="s">'cm'</span><span class="p">,</span> <span class="s">'ft'</span><span class="p">)</span> <span class="c">#30 centimeters to feet</span>
+<span class="mf">0.98425196850393692</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">convert</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span> <span class="s">'C'</span><span class="p">,</span> <span class="s">'K'</span><span class="p">)</span> <span class="c">#degrees celcius to kelvin</span>
+<span class="p">[</span><span class="mf">273.15</span><span class="p">,</span> <span class="mf">288.15</span><span class="p">,</span> <span class="mf">303.15</span><span class="p">]</span>
+</pre></div>
+
+<p>The function <em>flownormalshock</em> returns a tuple of flow values from normal shockwave theory. You can input one of the flow values as array_like data and the function will calculate the rest:</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">flowvalues</span> <span class="o">=</span> <span class="n">flownormalshock</span><span class="p">(</span><span class="n">M</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="c">#upstream Mach number = 3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flowvalues</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c">#downstream Mach number</span>
+<span class="mf">0.47519096331149141</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flowvalues</span> <span class="o">=</span> <span class="n">flownormalshock</span><span class="p">(</span><span class="n">Pitot</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="c">#Rayleight-Pitot</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flowvalues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c">#upstream Mach number</span>
+<span class="mf">1.3858511209068562</span>
+</pre></div>
+
+<p>The International Standard Atmosphere (ISA) can be evaluated with the <em>stdatmos</em> function. The following example uses <a href="http://matplotlib.org/">matplotlib</a> to plot the temperature gradient from 0 to 80 kilometers geometrical altitude.</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pylab</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">h_array</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">80000</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">h</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">stdatmos</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">h_array</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">plot</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">xlabel</span><span class="p">(</span><span class="s">"Temperature [K]"</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ylabel</span><span class="p">(</span><span class="s">"Height [M]"</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+<p>Another way of using the <em>stdatmos</em> function is to find the altitude at which a certain temperature, pressure or density occurs. The pressure altitude of 26 kPa can be found as follows:</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">stdatmos</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="mi">26000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c">#should be about 10km</span>
+<span class="mf">10124.61855654098</span>
+</pre></div>
+
+<p>For more information on all available functions and usages, refer to the source code on github. You can also use the python <em>help</em> function to display the docstring provided with each function:</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">help</span><span class="p">(</span><span class="n">geoidheight</span><span class="p">)</span>
+</pre></div>
       </section>
     </div>
 
