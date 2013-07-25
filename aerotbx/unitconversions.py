@@ -47,6 +47,7 @@ C_FORCE = {'N': 1.0,
 
 #length
 C_LEN = {'m': 1.0,
+         'cm': 0.01,
          'km': 1000.0,
          'mi': 5280 * 0.3048,
          'nmi': 1852.0,
@@ -153,4 +154,4 @@ def convert(value, unit_from, unit_to):
             return from_ndarray(itype, value)
 
     #no converter found
-    raise ValueError('Could not convert between given units.')
+    raise ValueError('Could not find definition of selected units.')
